@@ -13,11 +13,11 @@ skeletons. However, some functionality is complete:
   * Search reddits
   * Get listing for reddits
   * Get comments for link
+  * Save/unsave link
   
 Still to do:
   * Post link | self
   * Post comment / reply
-  * Save link
   * Hide/unhide
   * Unit tests
 
