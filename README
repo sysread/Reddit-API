@@ -14,10 +14,10 @@ skeletons. However, some functionality is complete:
   * Get listing for reddits
   * Get comments for link
   * Save/unsave link
+  * Post comment / reply
   
 Still to do:
   * Post link | self
-  * Post comment / reply
   * Hide/unhide
   * Unit tests
 

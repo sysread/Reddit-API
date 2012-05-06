@@ -35,4 +35,15 @@ sub unsave {
     });
 }
 
+sub comment {
+    my ($self, $comment) = @_;
+    $self->{_session}->require_login;
+    my $result = $self->{_session}->json_request('POST', '/api/comment/', undef, {
+        thing_id => $self->{name},
+        text     => $comment,
+    });
+    
+    return $result->{data}{things}[0]{data}{id};
+}
+
 1;

@@ -113,7 +113,7 @@ sub request {
     if ($res->is_success) {
         return $res->content;
     } else {
-        croak sprinrf('Request error: %s', $res->status_line);
+        croak sprintf('Request error: %s', $res->status_line);
     }
 }
 
