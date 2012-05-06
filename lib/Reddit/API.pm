@@ -96,6 +96,7 @@ sub request {
     if ($method eq 'POST') {
         $post_data = {} unless defined $post_data;
         $post_data->{modhash} = $self->{modhash} if $self->{modhash};
+        $post_data->{uh}      = $self->{modhash} if $self->{modhash};
 
         $request->uri($url);
         $request->method('POST');
@@ -136,6 +137,12 @@ sub json_request {
 
 sub is_logged_in {
     return defined $_[0]->{modhash};
+}
+
+sub require_login {
+    my $self = shift;
+    croak 'You must be logged in to perform this action'
+        unless $self->is_logged_in;
 }
 
 sub save_session {
@@ -193,6 +200,7 @@ sub login {
 
 sub me {
     my $self = shift;
+    $self->require_login;
     if ($self->is_logged_in) {
 	    my $result = $self->json_request('GET', '/api/me/');
 	    return Reddit::API::Account->new($self, $result->{data});
@@ -201,6 +209,7 @@ sub me {
 
 sub mine {
     my $self = shift;
+    $self->require_login;
     if ($self->is_logged_in) {
         my $result = $self->json_request('GET', '/reddits/mine/');
         return {

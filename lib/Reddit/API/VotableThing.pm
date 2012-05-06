@@ -11,11 +11,27 @@ use fields qw/ups downs likes score/;
 
 sub vote {
     my ($self, $direction) = @_;
+    $self->{_session}->require_login;
     croak 'Invalid vote direction' unless "$direction" =~ /^(-1|0|1)$/;
-    my $result = $self->{_session}->json_request('POST', '/api/vote/', undef, {
-        uh  => $self->{_session}{modhash},
+    $self->{_session}->json_request('POST', '/api/vote/', undef, {
         dir => $direction,
         id  => $self->{name},
+    });
+}
+
+sub save {
+    my $self = shift;
+    $self->{_session}->require_login;
+    $self->{_session}->json_request('POST', '/api/save/', undef, {
+        id => $self->{name},
+    });
+}
+
+sub unsave {
+    my $self = shift;
+    $self->{_session}->require_login;
+    $self->{_session}->json_request('POST', '/api/unsave/', undef, {
+        id => $self->{name},
     });
 }
 
