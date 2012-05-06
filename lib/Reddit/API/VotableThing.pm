@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use Carp;
 
-require Reddit::API;
 require Reddit::API::Thing;
 
 use base   qw/Reddit::API::Thing/;
