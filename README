@@ -15,13 +15,17 @@ skeletons. However, some functionality is complete:
   * Get comments for link
   * Save/unsave link
   * Post comment / reply
+  * Post link | text
   
 Still to do:
-  * Post link | self
   * Hide/unhide
+  * Make saving/loading sessions more flexible
   * Unit tests
   * Comments
   * perldoc
+  * cleanup
+  	--replace api strings with constants
+  	--replace api-defined parameter strings (e.g. kind=link|self) with constants
 
 INSTALLATION
 

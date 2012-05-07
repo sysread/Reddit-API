@@ -11,7 +11,7 @@ use URI::Encode    qw/uri_encode/;
 use JSON           qw//;
 
 require Reddit::API::Account;
-require Reddit::API::SubReddit;
+require Reddit::API::Link;
 
 #===============================================================================
 # Constants
@@ -45,14 +45,18 @@ sub build_query {
     join '&', map {uri_encode($_) . '=' . uri_encode($param->{$_})} keys %$param;
 }
 
-sub subreddit_path {
+sub subreddit {
     my $subject = shift;
     $subject =~ s/^\/r//; # trim leading /r
     $subject =~ s/^\///;  # trim leading slashes
     $subject =~ s/\/$//;  # trim trailing slashes
 
-    if ($subject !~ /\//) { # no slashes in name - it's probably good
-        return sprintf '/r/%s', $subject;
+    if ($subject !~ /\//) {   # no slashes in name - it's probably good
+        if ($subject eq '') { # front page
+            return '';
+        } else {              # subreddit
+	        return $subject;
+        }
     } else { # fail
         return;
     }
@@ -129,7 +133,13 @@ sub json_request {
     my $json = JSON::from_json($response);
 
     if (ref $json eq 'HASH' && $json->{json}) {
-        return $json->{json};
+        my $result = $json->{json};
+        if (@{$result->{errors}}) {
+            my @errors = map {$_->[1]} @{$result->{errors}};
+            croak sprintf("Error(s): %s", join('|', @errors));
+        } else {
+            return $result;
+        }
     } else {
         return $json;
     }
@@ -227,7 +237,78 @@ sub mine {
 sub find_subreddits {
     my ($self, $query) = @_;
     my $result = $self->json_request('GET', '/reddits/search/', { q => $query });
-    return [ map { Reddit::API::SubReddit->new($self, $_->{data}) } @{$result->{data}{children}} ];
+    my %subreddits = map {$_->{data}{display_name} => $_->{data}{url}} @{$result->{data}{children}};
+    return \%subreddits;
 }
+
+sub fetch_links {
+    my ($self, %param) = @_;
+    my $subreddit = $param{subreddit} || '';
+    my $view      = $param{view}      || Reddit::API::VIEW_DEFAULT();
+    my $limit     = $param{limit}     || Reddit::API::DEFAULT_LIMIT();
+    my $before    = $param{before};
+    my $after     = $param{after};
+    
+    # Get subreddit and path
+    $subreddit = subreddit($subreddit);
+    my $path = $subreddit
+        ? sprintf('/r/%s/%s', $subreddit, $view)
+        : sprintf('/%s', $view);
+
+    my @args = ('GET', $path);
+    if ($before || $after || $limit) {
+	    my %query;
+	    $query{limit}  = $limit  if defined $limit;
+	    $query{before} = $before if defined $before;
+	    $query{after}  = $after  if defined $after;
+	    push @args, \%query;
+    }
+
+    my $result = $self->json_request(@args);
+    return {
+        before => $result->{data}{before},
+        after  => $result->{data}{after},
+        items  => [ map {Reddit::API::Link->new($self, $_->{data})} @{$result->{data}{children}} ],
+    };
+}
+
+sub submit_link {
+    my ($self, %param) = @_;
+    my $subreddit = $param{subreddit} || '';
+    my $title     = $param{title}     || croak 'Expected "title"';
+    my $url       = $param{url}       || croak 'Expected "url"';
+    
+    $subreddit = subreddit($subreddit);
+    $self->require_login;
+
+    my $result = $self->json_request('POST', '/api/submit/', undef, {
+        title => $title,
+        url   => $url,
+        sr    => $subreddit,
+        kind  => 'link',
+    });
+    
+    return $result->{data}{id};
+}
+
+sub submit_text {
+    my ($self, %param) = @_;
+    my $subreddit = $param{subreddit} || '';
+    my $title     = $param{title}     || croak 'Expected "title"';
+    my $text      = $param{text}      || croak 'Expected "text"';
+    
+    $subreddit = subreddit($subreddit);
+    $self->require_login;
+
+    my $result = $self->json_request('POST', '/api/submit/', undef, {
+        title => $title,
+        text  => $text,
+        sr    => $subreddit,
+        kind  => 'self',
+    });
+    
+    return $result->{data}{id};
+}
+
 
 1;
