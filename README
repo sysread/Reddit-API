@@ -9,7 +9,6 @@ skeletons. However, some functionality is complete:
 
   * Log in
   * List your reddits
-  * Vote
   * Search reddits
   * Get listing for reddits
   * Get comments for link
@@ -17,16 +16,16 @@ skeletons. However, some functionality is complete:
   * Post link | text
   * Save/unsave link
   * Hide/unhide
+  * Voting
   
 Still to do:
   * Make saving/loading sessions more flexible
   * Unit tests
-  * Comments
+  * Comments/docs
   * perldoc
   * cleanup
   	--replace api strings with constants
   	--replace api-defined parameter strings (e.g. kind=link|self) with constants
-  	--make classes' mehtods proxies of API class
 
 INSTALLATION
 

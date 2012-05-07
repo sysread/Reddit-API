@@ -244,11 +244,12 @@ sub info {
     return $result;
 }
 
-# TODO reinstate SubReddit object, link methods back to here
 sub find_subreddits {
     my ($self, $query) = @_;
     my $result = $self->json_request('GET', '/reddits/search/', { q => $query });
-    my %subreddits = map {$_->{data}{display_name} => $_} @{$result->{data}{children}};
+    my %subreddits = map {
+        $_->{data}{display_name} => Reddit::API::SubReddit->new($self, $_->{data})
+    } @{$result->{data}{children}};
     return \%subreddits;
 }
 
