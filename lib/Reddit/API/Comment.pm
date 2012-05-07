@@ -28,4 +28,49 @@ sub set_replies {
     }
 }
 
+sub replies {
+    return shift->{replies};
+}
+
+sub reply {
+    my $self = shift;
+    return $self->SUPER::submit_comment(@_);
+}
+
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Reddit::API::Comment
+
+=head1 DESCRIPTION
+
+Wraps a posted comment.
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item replies()
+
+Returns a list ref of replies underneath this comment.
+
+=item reply(...)
+
+Syntactic sugar for C<Reddit::API::submit_comment()>.
+
+=back
+
+=head1 AUTHOR
+
+Jeff Ober L<mailto:jeffober@gmail.com>
+
+=head1 LICENSE
+
+BSD license
+
+=cut

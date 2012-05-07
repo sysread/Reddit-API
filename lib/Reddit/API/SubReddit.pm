@@ -27,3 +27,42 @@ sub submit_text {
 }
 
 1;
+__END__
+
+=pod
+
+=head1 NAME
+
+Reddit::API::SubReddit
+
+=head1 DESCRIPTION
+
+Provides convenience methods for interacting with SubReddits.
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item links(...)
+
+Wraps C<Reddit::API::fetch_links>, providing the subreddit parameter implicitly.
+
+=item submit_link($title, $url)
+
+Wraps C<Reddit::API::submit_link>, providing the subreddit parameter implicitly.
+
+=item submit_text($title, $text)
+
+Wraps C<Reddit::API::submit_text>, providing the subreddit parameter implicitly.
+
+=back
+
+=head1 AUTHOR
+
+Jeff Ober L<mailto:jeffober@gmail.com>
+
+=head1 LICENSE
+
+BSD license
+
+=cut

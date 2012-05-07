@@ -26,3 +26,35 @@ sub comments {
 }
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Reddit::API::Link
+
+=head1 DESCRIPTION
+
+Wraps a posted link or "self-post".
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item comments()
+
+Wraps C<Reddit::API::get_comments>, implicitly providing the permalink parameter.
+
+=back
+
+=head1 AUTHOR
+
+Jeff Ober L<mailto:jeffober@gmail.com>
+
+=head1 LICENSE
+
+BSD license
+
+=cut

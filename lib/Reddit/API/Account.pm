@@ -31,3 +31,32 @@ sub is_mod {
 }
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Reddit::API::Account
+
+=head1 DESCRIPTION
+
+Stores information about the logged in user account.
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+
+=back
+
+=head1 AUTHOR
+
+Jeff Ober L<mailto:jeffober@gmail.com>
+
+=head1 LICENSE
+
+BSD license
+
+=cut

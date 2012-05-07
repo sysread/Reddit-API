@@ -6,7 +6,6 @@ use strict;
 use warnings;
 use Carp;
 
-use Data::Dumper;
 use File::Spec     qw//;
 use LWP::UserAgent qw//;
 use HTTP::Request  qw//;
@@ -441,6 +440,8 @@ by the Reddit API. This module handles HTTP communication, basic session
 management (e.g. storing an active login session), and communication with
 Reddit's external API.
 
+For more information about the Reddit API, see L<https://github.com/reddit/reddit/wiki/API>.
+
 =head1 CONSTANTS
 
 	DEFAULT_LIMIT       The default number of links to be retried (25)
@@ -528,10 +529,18 @@ Submits a link to a reddit. Returns the id of the new link.
 Submits a self-post to a reddit. Returns the id of the new post.
 
 
-=item get_comments($parent_id)
+=item get_comments($permalink)
 
 Returns a list ref of Reddit::API::Comment objects underneath the
-the specified object (C<$parent_id>).
+the specified URL C<$permalink>. Unfortunately, this is the only 
+method available via the API. Comments may be more easily accessed
+via the Link object, which implicitly provides the C<$permalink>
+parameter.
+
+    my $links = $reddit->fetch_links(...);
+    foreach (@{$links->{items}}) {
+        my $comments = $_->comments();
+    }
 
 
 =item submit_comment(parent_id => ..., text => ...)
