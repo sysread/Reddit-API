@@ -1,6 +1,6 @@
 package Reddit::API;
 
-our $VERSION = '0.01';
+our $VERSION = '0.01'; ## no critic
 
 use strict;
 use warnings;
