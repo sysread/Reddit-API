@@ -5,7 +5,8 @@ use warnings;
 use Carp;
 use List::Util qw/first/;
 
-our @BOOL_FIELDS = qw/is_self likes clicked saved hidden over_18 over18/;
+our @BOOL_FIELDS = qw/is_self likes clicked saved hidden over_18 over18
+                      has_mail has_mod_mail is_mod is_gold/;
 
 
 use fields qw/_session name id/;
@@ -70,6 +71,22 @@ a Link object.
 
 Creates a new Thing. C<$session> must be an instance of Reddit::API.
 C<$data>, when present, must be a hash reference of key/value pairs.
+
+=back
+
+=head1 INTERNAL ROUTINES
+
+=over
+
+=item set_bool($field, $value)
+
+Sets a field to a boolean value of 1 or 0, rather than the JSON
+module's boolean type.
+
+=item load_from_source_data($data)
+
+Populates an instances field with data directly from JSON data returned
+by reddit's servers.
 
 =back
 

@@ -65,6 +65,22 @@ Syntactic sugar for C<Reddit::API::submit_comment()>.
 
 =back
 
+=head1 INTERNAL ROUTINES
+
+=over
+
+=item set_likes
+
+Conditionally sets the value of "likes" since it may validly be true, false, or
+neither, in the case of no vote being cast.
+
+=item set_replies
+
+Wraps the list of children in Comment class instances and ensures that comments
+with no replies return an empty array for C<replies>.
+
+=back
+
 =head1 AUTHOR
 
 Jeff Ober L<mailto:jeffober@gmail.com>

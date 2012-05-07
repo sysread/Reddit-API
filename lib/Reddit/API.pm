@@ -577,6 +577,44 @@ unhide the item in question.
 
 =back
 
+=head1 INTERNAL ROUTINES
+
+=over
+
+=item require_login
+
+Throws an error if the user is not logged in.
+
+
+=item subreddit
+
+Strips slashes and leading /r from a subreddit to ensure that only
+the "display name" of the subreddit is returned.
+
+
+=item build_query
+
+URI-encodes a hash of parameters into a query suitable for use in
+an HTTP request. Does not include the leading '?'.
+
+
+=item request
+
+Performs a request to reddit's servers using LWP. If the user is
+logged in, adds the "uh" and "modhash" parameters to POST queries
+as well as adding the reddit-specified cookie value for reddit_session.
+
+
+=item json_request
+
+Wraps C<request>, configuring the parameters to perform the request
+with an api_type of "json". After the request is complete, parses the
+JSON result and throws and error if one is specified in the result
+contents. Otherwise, returns the json data portion of the result.
+
+
+=back
+
 =head1 AUTHOR
 
 Jeff Ober L<mailto:jeffober@gmail.com>
