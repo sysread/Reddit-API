@@ -36,4 +36,12 @@ sub links {
     };
 }
 
+sub post_link {
+    
+}
+
+sub post_text {
+    
+}
+
 1;
