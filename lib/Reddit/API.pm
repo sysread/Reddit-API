@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Carp;
 
+use Data::Dumper;
 use File::Spec     qw//;
 use LWP::UserAgent qw//;
 use HTTP::Request  qw//;
@@ -12,6 +13,7 @@ use JSON           qw//;
 
 require Reddit::API::Account;
 require Reddit::API::Link;
+require Reddit::API::Comment;
 
 #===============================================================================
 # Constants
@@ -223,7 +225,7 @@ sub mine {
     if ($self->is_logged_in) {
         my $result = $self->json_request('GET', '/reddits/mine/');
         return {
-            map { 
+            map {
                 $_->{data}{display_name} => Reddit::API::SubReddit->new($self, $_->{data})
             } @{$result->{data}{children}}
         };
@@ -231,13 +233,22 @@ sub mine {
 }
 
 #===============================================================================
-# Other miscellaneous utilites
+# Finding subreddits and listings
 #===============================================================================
 
+sub info {
+    my ($self, $id) = @_;
+    defined $id || croak 'Expected $id';
+    my $path   = sprintf '/by_id/%s.json', $id;
+    my $result = $self->json_request('GET', $path);
+    return $result;
+}
+
+# TODO reinstate SubReddit object, link methods back to here
 sub find_subreddits {
     my ($self, $query) = @_;
     my $result = $self->json_request('GET', '/reddits/search/', { q => $query });
-    my %subreddits = map {$_->{data}{display_name} => $_->{data}{url}} @{$result->{data}{children}};
+    my %subreddits = map {$_->{data}{display_name} => $_} @{$result->{data}{children}};
     return \%subreddits;
 }
 
@@ -248,7 +259,7 @@ sub fetch_links {
     my $limit     = $param{limit}     || Reddit::API::DEFAULT_LIMIT();
     my $before    = $param{before};
     my $after     = $param{after};
-    
+
     # Get subreddit and path
     $subreddit = subreddit($subreddit);
     my $path = $subreddit
@@ -272,12 +283,16 @@ sub fetch_links {
     };
 }
 
+#===============================================================================
+# Submitting links
+#===============================================================================
+
 sub submit_link {
     my ($self, %param) = @_;
     my $subreddit = $param{subreddit} || '';
     my $title     = $param{title}     || croak 'Expected "title"';
     my $url       = $param{url}       || croak 'Expected "url"';
-    
+
     $subreddit = subreddit($subreddit);
     $self->require_login;
 
@@ -287,8 +302,8 @@ sub submit_link {
         sr    => $subreddit,
         kind  => 'link',
     });
-    
-    return $result->{data}{id};
+
+    return $result->{data}{name};
 }
 
 sub submit_text {
@@ -296,7 +311,7 @@ sub submit_text {
     my $subreddit = $param{subreddit} || '';
     my $title     = $param{title}     || croak 'Expected "title"';
     my $text      = $param{text}      || croak 'Expected "text"';
-    
+
     $subreddit = subreddit($subreddit);
     $self->require_login;
 
@@ -306,9 +321,78 @@ sub submit_text {
         sr    => $subreddit,
         kind  => 'self',
     });
-    
-    return $result->{data}{id};
+
+    return $result->{data}{name};
 }
 
+#===============================================================================
+# Comments
+#===============================================================================
+
+sub get_comments {
+    my ($self, %param) = @_;
+    my $permalink = $param{permalink} || croak 'Expected "permalink"';
+    my $result    = $self->{_session}->json_request('GET', $permalink);
+    my $comments  = $result->[1]{data}{children};
+    return [ map { Reddit::API::Comment->new($self, $_->{data}) } @$comments ];
+}
+
+sub submit_comment {
+    my ($self, %param) = @_;
+    my $parent_id = $param{parent_id} || croak 'Expected "parent_id"';
+    my $comment   = $param{text}      || croak 'Expected "text"';
+    my $result    = $self->json_request('POST', '/api/comment/', undef, {
+        thing_id => $parent_id,
+        text     => $comment,
+    });
+    
+    my $id = $result->{data}{things}[0]{data}{id};
+    return $id;
+}
+
+#===============================================================================
+# Voting
+#===============================================================================
+
+sub vote {
+    my ($self, $name, $direction) = @_;
+    defined $name      || croak 'Expected $name';
+    defined $direction || croak 'Expected $direction';
+    croak 'Invalid vote direction' unless "$direction" =~ /^(-1|0|1)$/;
+    $self->require_login;
+    $self->json_request('POST', '/api/vote/', undef, { dir => $direction, id  => $name });
+}
+
+#===============================================================================
+# Saving and hiding
+#===============================================================================
+
+sub save {
+    my $self = shift;
+    my $name = shift || croak 'Expected $name';
+    $self->require_login;
+    $self->json_request('POST', '/api/save/', undef, { id => $name });
+}
+
+sub unsave {
+    my $self = shift;
+    my $name = shift || croak 'Expected $name';
+    $self->require_login;
+    $self->json_request('POST', '/api/unsave/', undef, { id => $name });
+}
+
+sub hide {
+    my $self = shift;
+    my $name = shift || croak 'Expected $name';
+    $self->require_login;
+    $self->json_request('POST', '/api/hide/', undef, { id => $name });
+}
+
+sub unhide {
+    my $self = shift;
+    my $name = shift || croak 'Expected $name';
+    $self->require_login;
+    $self->json_request('POST', '/api/unhide/', undef, { id => $name });
+}
 
 1;

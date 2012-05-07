@@ -13,12 +13,12 @@ skeletons. However, some functionality is complete:
   * Search reddits
   * Get listing for reddits
   * Get comments for link
-  * Save/unsave link
   * Post comment / reply
   * Post link | text
+  * Save/unsave link
+  * Hide/unhide
   
 Still to do:
-  * Hide/unhide
   * Make saving/loading sessions more flexible
   * Unit tests
   * Comments
@@ -26,6 +26,7 @@ Still to do:
   * cleanup
   	--replace api strings with constants
   	--replace api-defined parameter strings (e.g. kind=link|self) with constants
+  	--make classes' mehtods proxies of API class
 
 INSTALLATION
 

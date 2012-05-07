@@ -22,9 +22,7 @@ sub set_likes {
 
 sub comments {
     my $self = shift;
-    my $result = $self->{_session}->json_request('GET', $self->{permalink});
-    my $comments = $result->[1]{data}{children};
-    return [ map { Reddit::API::Comment->new($self->{_session}, $_->{data}) } @$comments ];
+    return $self->{_session}->get_comments(permalink => $self->{permalink});
 }
 
 1;
