@@ -4,8 +4,8 @@ Reddit::API provides a perl wrapper for the Reddit API, allowing
 basic services such as login, retrieval of stories and comments,
 voting, and publishing new links and comments (TODO).
 
-This module is currently in development. Many files are Module::Builder
-skeletons. However, some functionality is complete:
+Please regard this software is beta and incomplete. Many files are
+default skeletons. However, some functionality is complete:
 
   * Log in
   * List your reddits
@@ -21,8 +21,6 @@ skeletons. However, some functionality is complete:
 Still to do:
   * Make saving/loading sessions more flexible
   * Unit tests
-  * Comments/docs
-  * perldoc
   * cleanup
   	--replace api strings with constants
   	--replace api-defined parameter strings (e.g. kind=link|self) with constants
