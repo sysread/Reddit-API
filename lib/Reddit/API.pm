@@ -1,5 +1,7 @@
 package Reddit::API;
 
+our $VERSION = '0.01';
+
 use strict;
 use warnings;
 use Carp;
@@ -159,16 +161,13 @@ sub require_login {
 
 sub save_session {
     my ($self, $file) = @_;
-    if ($self->{modhash}) {
-        my $session = { modhash => $self->{modhash}, cookie => $self->{cookie} };
-	    my $file_path = File::Spec->catfile($file);
-        open(my $fh, '>', $file_path) or croak $!;
-        print $fh JSON::to_json($session);
-        close $fh;
-        return 1;
-    } else {
-        return 0;
-    }
+    $self->require_login;
+    my $session = { modhash => $self->{modhash}, cookie => $self->{cookie} };
+    my $file_path = File::Spec->catfile($file);
+    open(my $fh, '>', $file_path) or croak $!;
+    print $fh JSON::to_json($session);
+    close $fh;
+    return 1;
 }
 
 sub load_session {
@@ -342,11 +341,13 @@ sub submit_comment {
     my ($self, %param) = @_;
     my $parent_id = $param{parent_id} || croak 'Expected "parent_id"';
     my $comment   = $param{text}      || croak 'Expected "text"';
-    my $result    = $self->json_request('POST', '/api/comment/', undef, {
+
+    $self->require_login;
+    my $result = $self->json_request('POST', '/api/comment/', undef, {
         thing_id => $parent_id,
         text     => $comment,
     });
-    
+
     my $id = $result->{data}{things}[0]{data}{id};
     return $id;
 }
@@ -397,3 +398,182 @@ sub unhide {
 }
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Reddit::API - A perl wrapper for Reddit
+
+=head1 VERSION
+
+Version 0.01
+
+=head1 SYNOPSIS
+
+    use Reddit::API;
+
+    my $session_file = '~/.reddit';
+    my $reddit       = Reddit::API->new(from_session_file => $session_file);
+
+    unless ($reddit->is_logged_in) {
+        $reddit->login('someone', 'secret');
+        $reddit->save_session($session_file);
+    }
+
+    $reddit->submit_link(
+        subreddit => 'perl',
+        title     => 'Perl is still alive!',
+        url       => 'http://www.perl.org'
+    );
+
+    my $links = $reddit->fetch_links(subreddit => '/r/perl', limit => 10);
+    foreach (@{$links->{items}}) {
+        ...
+    }
+
+=head1 DESCRIPTION
+
+Reddit::API provides methods and simple object wrappers for objects exposed
+by the Reddit API. This module handles HTTP communication, basic session
+management (e.g. storing an active login session), and communication with
+Reddit's external API.
+
+=head1 CONSTANTS
+
+	DEFAULT_LIMIT       The default number of links to be retried (25)
+	VIEW_HOT            "Hot" links feed
+	VIEW_NEW            "New" links feed
+	VIEW_CONTROVERSIAL  "Controversial" links feed
+	VIEW_TOP            "Top" links feed
+	VIEW_DEFAULT        Default feed if not specified (VIEW_HOT)
+	VOTE_UP             Up vote
+	VOTE_DOWN           Down vote
+	VOTE_NONE           "Un" vote
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new(from_source_file => ...)
+
+Begins a new or loads an existing reddit session. If C<from_source_file> is
+provided, it will be read and parsed as JSON. If session data is found, it
+is restored. Otherwise, a new session is started.
+
+
+=item is_logged_in()
+
+Returns true(ish) if there is an active login session. No attempt is made to
+validate the current session against the server.
+
+
+=item save_session($path)
+
+Saves the current session to C<$path>. Throws an error if the user is not logged in.
+
+
+=item load_session($path)
+
+Attempts to load the session from C<$path>. Returns true if successful.
+
+
+=item login($usr, $pwd)
+
+Attempts to log the user in. Throws an error on failure.
+
+
+=item me()
+
+Returns a Reddit::API::Account object
+
+
+=item mine()
+
+Returns a list of Reddit::API::SubReddit objects represting the list of reddits
+to which the user is subscribed.
+
+
+=item info($item_id)
+
+Returns a has of information about C<$item_id>, which must be a complete name
+(e.g., t3_xxxxx).
+
+
+=item find_subreddits($query)
+
+Returns a list of SubReddit objects matching C<$query>.
+
+
+=item fetch_links(subreddit => ..., view => ..., limit => ..., before => ..., after => ...)
+
+Returns a list of links from a reddit page. If C<subreddit> is specified,
+the list of links is returned from the desired subreddit. Otherwise, the
+links will be from the front page. C<view> specifieds the feed (e.g.
+C<VIEW_NEW> or C<VIEW_HOT>). C<limit> may be used to limit the number of
+objects returned, and C<before> and C<after> denote the placeholders for
+slicing the feed up, just as the reddit urls themselves do. Data is returned
+as a hash with three keys, I<before>, I<after>, and I<items>.
+
+
+=item submit_link(subreddit => ..., title => ..., url => ...)
+
+Submits a link to a reddit. Returns the id of the new link.
+
+
+=item submit_text(subreddit => ..., title => ..., text => ...)
+
+Submits a self-post to a reddit. Returns the id of the new post.
+
+
+=item get_comments($parent_id)
+
+Returns a list ref of Reddit::API::Comment objects underneath the
+the specified object (C<$parent_id>).
+
+
+=item submit_comment(parent_id => ..., text => ...)
+
+Submits a new comment underneath C<parent_id>.
+
+
+=item vote(item_id => ..., direction => ...)
+
+Votes for C<item_id>. C<direction> is one of C<VOTE_UP>, C<VOTE_DOWN>,
+or C<VOTE_NONE>.
+
+
+=item save($item_id)
+
+Saves C<$item_id> under the user's account.
+
+
+=item unsave($item_id)
+
+Unsaves C<$item_id> under the user's account.
+
+
+=item hide($item_id)
+
+Hides $<item_id>. Throws an error if the user does not have permission to hide
+the item in question.
+
+
+=item unhide($item_id)
+
+Unhides $<item_id>. Throws an error if the user does not have permission to
+unhide the item in question.
+
+=back
+
+=head1 AUTHOR
+
+Jeff Ober L<mailto:jeffober@gmail.com>
+
+=head1 LICENSE
+
+BSD license
+
+=cut
