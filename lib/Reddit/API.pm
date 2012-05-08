@@ -6,15 +6,17 @@ use strict;
 use warnings;
 use Carp;
 
-use File::Spec     qw//;
 use LWP::UserAgent qw//;
 use HTTP::Request  qw//;
 use URI::Encode    qw/uri_encode/;
 use JSON           qw//;
+use POSIX          qw/strftime/;
+
 
 require Reddit::API::Account;
-require Reddit::API::Link;
 require Reddit::API::Comment;
+require Reddit::API::Link;
+require Reddit::API::SubReddit;
 
 #===============================================================================
 # Constants
@@ -32,16 +34,64 @@ use constant VOTE_UP            => 1;
 use constant VOTE_DOWN          => -1;
 use constant VOTE_NONE          => 0;
 
+use constant SUBMIT_LINK        => 'link';
+use constant SUBMIT_SELF        => 'self';
+
+use constant API_ME             => 0;
+use constant API_INFO           => 1;
+use constant API_SEARCH         => 2;
+use constant API_LOGIN          => 3;
+use constant API_SUBMIT         => 4;
+use constant API_COMMENT        => 5;
+use constant API_VOTE           => 6;
+use constant API_SAVE           => 7;
+use constant API_UNSAVE         => 8;
+use constant API_HIDE           => 9;
+use constant API_UNHIDE         => 10;
+use constant API_SUBREDDITS     => 11;
+
+use constant SUBREDDITS_HOME    => '';
+use constant SUBREDDITS_MINE    => 'mine';
+use constant SUBREDDITS_POPULAR => 'popular';
+use constant SUBREDDITS_NEW     => 'new';
+use constant SUBREDDITS_CONTRIB => 'contributor';
+use constant SUBREDDITS_MOD     => 'moderator';
+
 #===============================================================================
 # Parameters
 #===============================================================================
 
+our $DEBUG    = 0;
 our $BASE_URL = 'http://www.reddit.com';
 our $UA       = 'Reddit::API/0.1';
+
+our @API;
+$API[API_ME            ] = ['GET',  '/api/me'              ];
+$API[API_INFO          ] = ['GET',  '/by_id/%s'            ];
+$API[API_SEARCH        ] = ['GET',  '/reddits/search'      ];
+$API[API_LOGIN         ] = ['POST', '/api/login/%s'        ];
+$API[API_SUBMIT        ] = ['POST', '/api/submit'          ];
+$API[API_COMMENT       ] = ['POST', '/api/comment'         ];
+$API[API_VOTE          ] = ['POST', '/api/vote'            ];
+$API[API_SAVE          ] = ['POST', '/api/save'            ];
+$API[API_UNSAVE        ] = ['POST', '/api/unsave'          ];
+$API[API_HIDE          ] = ['POST', '/api/hide'            ];
+$API[API_UNHIDE        ] = ['POST', '/api/unhide'          ];
+$API[API_SUBREDDITS    ] = ['GET',  '/reddits/%s'          ];
 
 #===============================================================================
 # Package routines
 #===============================================================================
+
+sub DEBUG {
+    if ($DEBUG) {
+	    my ($format, @args) = @_;
+	    my $ts  = strftime "%a %b %e %H:%M:%S %Y", localtime;
+	    my $msg = sprintf $format, @args;
+	    chomp $msg;
+	    warn sprintf("[%s] [ %s ]\n", $ts, $msg);
+    }
+}
 
 sub build_query {
     my $param = shift;
@@ -70,13 +120,14 @@ sub subreddit {
 #===============================================================================
 
 use fields (
-    'modhash', # store session modhash
-    'cookie',  # store user cookie
+    'modhash',      # store session modhash
+    'cookie',       # store user cookie
+    'session_file', # path to session file
 );
 
 sub new {
     my ($class, %param) = @_;
-    my $session = $param{from_session_file};
+    my $session = $param{session_file};
     my $self    = fields::new($class);
     $self->load_session($session) if $session;
     return $self;
@@ -95,7 +146,7 @@ sub request {
     my $url     = sprintf('%s/%s', $BASE_URL, $path);
 
     $url = sprintf('%s?%s', $url, build_query($query))
-        if defined $query;
+        if $query;
 
     $request->header('Cookie', sprintf('reddit_session=%s', $self->{cookie}))
         if $self->{cookie};
@@ -114,6 +165,8 @@ sub request {
         $request->method('GET');
     }
 
+    DEBUG('%4s request to %s', $method, $url);
+
     my $ua  = LWP::UserAgent->new(agent => $UA, env_proxy => 1);
     my $res = $ua->request($request);
 
@@ -126,14 +179,16 @@ sub request {
 
 sub json_request {
     my ($self, $method, $path, $query, $post_data) = @_;
-    $query     ||= {};
-    $post_data ||= {};
 
-    $post_data->{api_type} = 'json';
-    $path .= '.json' if $method eq 'GET';
+    if ($method eq 'POST') {
+        $post_data ||= {};
+	    $post_data->{api_type} = 'json';
+    } else {
+	    $path .= '.json';
+    }
 
     my $response = $self->request($method, $path, $query, $post_data);
-    my $json = JSON::from_json($response);
+    my $json     = JSON::from_json($response);
 
     if (ref $json eq 'HASH' && $json->{json}) {
         my $result = $json->{json};
@@ -146,6 +201,26 @@ sub json_request {
     } else {
         return $json;
     }
+}
+
+sub api_json_request {
+    my ($self, %param) = @_;
+    my $api  = $param{api}  || croak 'Expected "api"';
+    my $args = $param{args} || [];
+    my $data = $param{data};
+
+    my $info   = $API[$api] || croak "Unknown API: $api";
+    my ($method, $path) = @$info;
+    $path = sprintf $path, @$args;
+
+    my ($query, $post_data);
+    if ($method eq 'GET') {
+        $query = $data;
+    } else {
+        $post_data = $data;
+    }
+
+    return $self->json_request($method, $path, $query, $post_data);
 }
 
 sub is_logged_in {
@@ -161,25 +236,34 @@ sub require_login {
 sub save_session {
     my ($self, $file) = @_;
     $self->require_login;
-    my $session = { modhash => $self->{modhash}, cookie => $self->{cookie} };
-    my $file_path = File::Spec->catfile($file);
+    $self->{session_file} || $file || croak 'Expected $file';
+
+    # Prepare session and file path
+    my $session   = { modhash => $self->{modhash}, cookie => $self->{cookie} };
+    my $file_path = defined $file ? $file : $self->{session_file};
+
+    # Write out session
     open(my $fh, '>', $file_path) or croak $!;
     print $fh JSON::to_json($session);
     close $fh;
+
+    # If session file was updated, replace the field
+    $self->{session_file} = $file_path;
+
     return 1;
 }
 
 sub load_session {
     my ($self, $file) = @_;
-    my $file_path = File::Spec->catfile($file);
-    if (-f $file_path) {
-        open(my $fh, '<', $file_path) or croak $!;
+    if (-f $file) {
+        open(my $fh, '<', $file) or croak $!;
         my $data = do { local $/; <$fh> };
         close $fh;
 
         my $session = JSON::from_json($data);
-        $self->{modhash} = $session->{modhash};
-        $self->{cookie} = $session->{cookie};
+        $self->{session_file} = $file;
+        $self->{modhash}      = $session->{modhash};
+        $self->{cookie}       = $session->{cookie};
 
         return 1;
     } else {
@@ -196,7 +280,12 @@ sub login {
     !$usr && croak 'Username expected';
     !$pwd && croak 'Password expected';
 
-    my $result = $self->json_request('POST', sprintf('/api/login/%s/', $usr), undef, { user => $usr, passwd => $pwd });
+    my $result = $self->api_json_request(
+        api  => API_LOGIN,
+        args => [$usr],
+        data => { user => $usr, passwd => $pwd },
+    );
+
     my @errors = @{$result->{errors}};
 
     if (@errors) {
@@ -212,23 +301,36 @@ sub me {
     my $self = shift;
     $self->require_login;
     if ($self->is_logged_in) {
-	    my $result = $self->json_request('GET', '/api/me/');
+        my $result = $self->api_json_request(api => API_ME);
 	    return Reddit::API::Account->new($self, $result->{data});
     }
 }
 
-sub mine {
-    my $self = shift;
-    $self->require_login;
+sub list_subreddits {
+    my ($self, $type) = @_;
+    defined $type || croak 'Expected $type"';
+    
+    $self->require_login
+	    if $type eq SUBREDDITS_MOD
+	    || $type eq SUBREDDITS_MINE
+	    || $type eq SUBREDDITS_CONTRIB;
+
     if ($self->is_logged_in) {
-        my $result = $self->json_request('GET', '/reddits/mine/');
+        my $result = $self->api_json_request(api => API_SUBREDDITS, args => [$type]);
         return {
-            map {
-                $_->{data}{display_name} => Reddit::API::SubReddit->new($self, $_->{data})
-            } @{$result->{data}{children}}
+            map { $_->{data}{display_name} => Reddit::API::SubReddit->new($self, $_->{data}) }
+                @{$result->{data}{children}}
         };
     }
 }
+
+sub mod_subreddits     { $_[0]->require_login; return $_[0]->list_subreddits(SUBREDDITS_MOD)     }
+sub my_subreddits      { $_[0]->require_login; return $_[0]->list_subreddits(SUBREDDITS_MINE)    }
+sub contrib_subreddits { $_[0]->require_login; return $_[0]->list_subreddits(SUBREDDITS_CONTRIB) }
+
+sub home_subreddits    { return $_[0]->list_subreddits(SUBREDDITS_HOME)    }
+sub popular_subreddits { return $_[0]->list_subreddits(SUBREDDITS_POPULAR) }
+sub new_subreddits     { return $_[0]->list_subreddits(SUBREDDITS_NEW)     }
 
 #===============================================================================
 # Finding subreddits and listings
@@ -237,14 +339,13 @@ sub mine {
 sub info {
     my ($self, $id) = @_;
     defined $id || croak 'Expected $id';
-    my $path   = sprintf '/by_id/%s.json', $id;
-    my $result = $self->json_request('GET', $path);
+    my $result = $self->api_json_request(api => API_INFO, args => [$id]);
     return $result;
 }
 
 sub find_subreddits {
     my ($self, $query) = @_;
-    my $result = $self->json_request('GET', '/reddits/search/', { q => $query });
+    my $result = $self->api_json_request(api => API_SEARCH, data => { q => $query });
     my %subreddits = map {
         $_->{data}{display_name} => Reddit::API::SubReddit->new($self, $_->{data})
     } @{$result->{data}{children}};
@@ -295,11 +396,11 @@ sub submit_link {
     $subreddit = subreddit($subreddit);
     $self->require_login;
 
-    my $result = $self->json_request('POST', '/api/submit/', undef, {
+    my $result = $self->api_json_request(api => API_SUBMIT, data => {
         title => $title,
         url   => $url,
         sr    => $subreddit,
-        kind  => 'link',
+        kind  => SUBMIT_LINK,
     });
 
     return $result->{data}{name};
@@ -314,11 +415,11 @@ sub submit_text {
     $subreddit = subreddit($subreddit);
     $self->require_login;
 
-    my $result = $self->json_request('POST', '/api/submit/', undef, {
+    my $result = $self->api_json_request(api => API_SUBMIT, data => {
         title => $title,
         text  => $text,
         sr    => $subreddit,
-        kind  => 'self',
+        kind  => SUBMIT_SELF,
     });
 
     return $result->{data}{name};
@@ -342,7 +443,7 @@ sub submit_comment {
     my $comment   = $param{text}      || croak 'Expected "text"';
 
     $self->require_login;
-    my $result = $self->json_request('POST', '/api/comment/', undef, {
+    my $result = $self->api_json_request(api => API_COMMENT, data => {
         thing_id => $parent_id,
         text     => $comment,
     });
@@ -361,7 +462,7 @@ sub vote {
     defined $direction || croak 'Expected $direction';
     croak 'Invalid vote direction' unless "$direction" =~ /^(-1|0|1)$/;
     $self->require_login;
-    $self->json_request('POST', '/api/vote/', undef, { dir => $direction, id  => $name });
+    $self->api_json_request(api => API_VOTE, data => { dir => $direction, id  => $name });
 }
 
 #===============================================================================
@@ -372,28 +473,28 @@ sub save {
     my $self = shift;
     my $name = shift || croak 'Expected $name';
     $self->require_login;
-    $self->json_request('POST', '/api/save/', undef, { id => $name });
+    $self->api_json_request(api => API_SAVE, data => { id => $name });
 }
 
 sub unsave {
     my $self = shift;
     my $name = shift || croak 'Expected $name';
     $self->require_login;
-    $self->json_request('POST', '/api/unsave/', undef, { id => $name });
+    $self->api_json_request(api => API_UNSAVE, data => { id => $name });
 }
 
 sub hide {
     my $self = shift;
     my $name = shift || croak 'Expected $name';
     $self->require_login;
-    $self->json_request('POST', '/api/hide/', undef, { id => $name });
+    $self->api_json_request(api => API_HIDE, data => { id => $name });
 }
 
 sub unhide {
     my $self = shift;
     my $name = shift || croak 'Expected $name';
     $self->require_login;
-    $self->json_request('POST', '/api/unhide/', undef, { id => $name });
+    $self->api_json_request(api => API_UNHIDE, data => { id => $name });
 }
 
 1;
@@ -415,11 +516,11 @@ Version 0.01
     use Reddit::API;
 
     my $session_file = '~/.reddit';
-    my $reddit       = Reddit::API->new(from_session_file => $session_file);
+    my $reddit       = Reddit::API->new(session_file => $session_file);
 
     unless ($reddit->is_logged_in) {
         $reddit->login('someone', 'secret');
-        $reddit->save_session($session_file);
+        $reddit->save_session();
     }
 
     $reddit->submit_link(
@@ -444,23 +545,32 @@ For more information about the Reddit API, see L<https://github.com/reddit/reddi
 
 =head1 CONSTANTS
 
-	DEFAULT_LIMIT       The default number of links to be retried (25)
 	VIEW_HOT            "Hot" links feed
 	VIEW_NEW            "New" links feed
 	VIEW_CONTROVERSIAL  "Controversial" links feed
 	VIEW_TOP            "Top" links feed
+	
 	VIEW_DEFAULT        Default feed if not specified (VIEW_HOT)
+	DEFAULT_LIMIT       The default number of links to be retried (25)
+	
 	VOTE_UP             Up vote
 	VOTE_DOWN           Down vote
 	VOTE_NONE           "Un" vote
+
+	SUBREDDITS_HOME     List reddits on the homepage
+	SUBREDDITS_POPULAR  List popular reddits
+	SUBREDDITS_NEW      List new reddits
+	SUBREDDITS_MINE     List reddits for which the logged in user is subscribed
+	SUBREDDITS_CONTRIB  List reddits for which the logged in user is a contributor
+	SUBREDDITS_MOD      List reddits for which the logged in user is a moderator
 
 =head1 SUBROUTINES/METHODS
 
 =over
 
-=item new(from_source_file => ...)
+=item new(session_file => ...)
 
-Begins a new or loads an existing reddit session. If C<from_source_file> is
+Begins a new or loads an existing reddit session. If C<session_file> is
 provided, it will be read and parsed as JSON. If session data is found, it
 is restored. Otherwise, a new session is started.
 
@@ -473,12 +583,15 @@ validate the current session against the server.
 
 =item save_session($path)
 
-Saves the current session to C<$path>. Throws an error if the user is not logged in.
+Saves the current session to C<$path>. Throws an error if the user is not logged
+in. C<$path> is only required if the Reddit::API instance was created without
+the C<session_file> parameter.
 
 
 =item load_session($path)
 
-Attempts to load the session from C<$path>. Returns true if successful.
+Attempts to load the session from C<$path>. When successful, returns true and
+stores the session file path for future use.
 
 
 =item login($usr, $pwd)
@@ -491,10 +604,43 @@ Attempts to log the user in. Throws an error on failure.
 Returns a Reddit::API::Account object
 
 
-=item mine()
+=item list_subreddits($type)
 
-Returns a list of Reddit::API::SubReddit objects represting the list of reddits
-to which the user is subscribed.
+Returns a list of Reddit::API::SubReddit objects for C<$type>, where C<$type>
+is a C<SUBREDDITS_*> constant.
+
+
+=item my_subreddits()
+
+Syntactic sugar for C<list_subreddits(SUBREDDITS_MINE)>. Throws an error if
+the user is not logged in.
+
+
+=item home_subreddits()
+
+Syntactic sugar for C<list_subreddits(SUBREDDITS_HOME)>. Throws an error if
+the user is not logged in.
+
+
+=item mod_subreddits()
+
+Syntactic sugar for C<list_subreddits(SUBREDDITS_MOD)>. Throws an error if
+the user is not logged in.
+
+
+=item contrib_subreddits()
+
+Syntactic sugar for C<list_subreddits(SUBREDDITS_CONTRIB)>.
+
+
+=item popular_subbreddits()
+
+Syntactic sugar for C<list_subreddits(SUBREDDITS_POPULAR)>.
+
+
+=item new_subreddits()
+
+Syntactic sugar for C<list_subreddits(SUBREDDITS_NEW)>.
 
 
 =item info($item_id)
@@ -532,7 +678,7 @@ Submits a self-post to a reddit. Returns the id of the new post.
 =item get_comments($permalink)
 
 Returns a list ref of Reddit::API::Comment objects underneath the
-the specified URL C<$permalink>. Unfortunately, this is the only 
+the specified URL C<$permalink>. Unfortunately, this is the only
 method available via the API. Comments may be more easily accessed
 via the Link object, which implicitly provides the C<$permalink>
 parameter.
@@ -575,6 +721,7 @@ the item in question.
 Unhides $<item_id>. Throws an error if the user does not have permission to
 unhide the item in question.
 
+
 =back
 
 =head1 INTERNAL ROUTINES
@@ -611,6 +758,11 @@ Wraps C<request>, configuring the parameters to perform the request
 with an api_type of "json". After the request is complete, parses the
 JSON result and throws and error if one is specified in the result
 contents. Otherwise, returns the json data portion of the result.
+
+
+=item api_json_request
+
+Wraps C<json_request>, getting method and path from an API_CONSTANT.
 
 
 =back
