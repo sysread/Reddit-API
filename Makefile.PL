@@ -13,7 +13,12 @@ WriteMakefile(
       : ()),
     PL_FILES            => {},
     PREREQ_PM => {
-        'Test::More' => 0,
+	'HTTP::Request' => 0,
+	'JSON'		=> 0,
+	'List::Util'	=> 0,
+	'LWP::UserAgent'=> 0,
+        'Test::More' 	=> 0,
+	'URI::Encode'	=> 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Reddit-API-*' },
