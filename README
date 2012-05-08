@@ -19,11 +19,7 @@ default skeletons. However, some functionality is complete:
   * Voting
   
 Still to do:
-  * Make saving/loading sessions more flexible
   * Unit tests
-  * cleanup
-  	--replace api strings with constants
-  	--replace api-defined parameter strings (e.g. kind=link|self) with constants
 
 INSTALLATION
 
