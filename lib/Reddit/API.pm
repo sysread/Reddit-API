@@ -633,7 +633,7 @@ the user is not logged in.
 Syntactic sugar for C<list_subreddits(SUBREDDITS_CONTRIB)>.
 
 
-=item popular_subbreddits()
+=item popular_subreddits()
 
 Syntactic sugar for C<list_subreddits(SUBREDDITS_POPULAR)>.
 
@@ -727,6 +727,12 @@ unhide the item in question.
 =head1 INTERNAL ROUTINES
 
 =over
+
+=item DEBUG
+
+When C<$Reddit::API::DEBUG> is true, acts as syntactic sugar for
+warn(sprintf(@_)). Used to provided logging.
+
 
 =item require_login
 
