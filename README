@@ -4,19 +4,18 @@ Reddit::API provides a perl wrapper for the Reddit API, allowing
 basic services such as login, retrieval of stories and comments,
 voting, and publishing new links and comments (TODO).
 
-Please regard this software is beta and incomplete. Many files are
-default skeletons. However, some functionality is complete:
+Please regard this software is beta and incomplete. However,
+basic functionality is complete:
 
-  * Log in
-  * List your reddits
-  * Search reddits
-  * Get listing for reddits
-  * Get comments for link
-  * Post comment / reply
-  * Post link | text
-  * Save/unsave link
-  * Hide/unhide
+  * Loggin in
+  * Listing reddits
+  * Searching reddits
+  * Get links listing for reddits
   * Voting
+  * Get/post comments
+  * Post link/self
+  * Save/unsave
+  * Hide/unhide
   
 Still to do:
   * Unit tests
