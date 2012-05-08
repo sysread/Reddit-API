@@ -63,21 +63,21 @@ use constant SUBREDDITS_MOD     => 'moderator';
 
 our $DEBUG    = 0;
 our $BASE_URL = 'http://www.reddit.com';
-our $UA       = 'Reddit::API/0.1';
+our $UA       = sprintf 'Reddit::API/%f', $VERSION;
 
 our @API;
-$API[API_ME            ] = ['GET',  '/api/me'              ];
-$API[API_INFO          ] = ['GET',  '/by_id/%s'            ];
-$API[API_SEARCH        ] = ['GET',  '/reddits/search'      ];
-$API[API_LOGIN         ] = ['POST', '/api/login/%s'        ];
-$API[API_SUBMIT        ] = ['POST', '/api/submit'          ];
-$API[API_COMMENT       ] = ['POST', '/api/comment'         ];
-$API[API_VOTE          ] = ['POST', '/api/vote'            ];
-$API[API_SAVE          ] = ['POST', '/api/save'            ];
-$API[API_UNSAVE        ] = ['POST', '/api/unsave'          ];
-$API[API_HIDE          ] = ['POST', '/api/hide'            ];
-$API[API_UNHIDE        ] = ['POST', '/api/unhide'          ];
-$API[API_SUBREDDITS    ] = ['GET',  '/reddits/%s'          ];
+$API[API_ME        ] = ['GET',  '/api/me'        ];
+$API[API_INFO      ] = ['GET',  '/by_id/%s'      ];
+$API[API_SEARCH    ] = ['GET',  '/reddits/search'];
+$API[API_LOGIN     ] = ['POST', '/api/login/%s'  ];
+$API[API_SUBMIT    ] = ['POST', '/api/submit'    ];
+$API[API_COMMENT   ] = ['POST', '/api/comment'   ];
+$API[API_VOTE      ] = ['POST', '/api/vote'      ];
+$API[API_SAVE      ] = ['POST', '/api/save'      ];
+$API[API_UNSAVE    ] = ['POST', '/api/unsave'    ];
+$API[API_HIDE      ] = ['POST', '/api/hide'      ];
+$API[API_UNHIDE    ] = ['POST', '/api/unhide'    ];
+$API[API_SUBREDDITS] = ['GET',  '/reddits/%s'    ];
 
 #===============================================================================
 # Package routines
@@ -563,6 +563,18 @@ For more information about the Reddit API, see L<https://github.com/reddit/reddi
 	SUBREDDITS_MINE     List reddits for which the logged in user is subscribed
 	SUBREDDITS_CONTRIB  List reddits for which the logged in user is a contributor
 	SUBREDDITS_MOD      List reddits for which the logged in user is a moderator
+
+=head1 GLOBALS
+
+=item $UA
+
+This is the user agent string, and defaults to C<Reddit::API/$VERSION>.
+
+
+=item $DEBUG
+
+When set to true, outputs a small amount of debugging information.
+
 
 =head1 SUBROUTINES/METHODS
 
