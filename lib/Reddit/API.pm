@@ -566,6 +566,8 @@ For more information about the Reddit API, see L<https://github.com/reddit/reddi
 
 =head1 GLOBALS
 
+=over
+
 =item $UA
 
 This is the user agent string, and defaults to C<Reddit::API/$VERSION>.
@@ -575,6 +577,8 @@ This is the user agent string, and defaults to C<Reddit::API/$VERSION>.
 
 When set to true, outputs a small amount of debugging information.
 
+
+=back
 
 =head1 SUBROUTINES/METHODS
 
