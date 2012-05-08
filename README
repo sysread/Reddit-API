@@ -2,7 +2,7 @@ Reddit-API
 
 Reddit::API provides a perl wrapper for the Reddit API, allowing
 basic services such as login, retrieval of stories and comments,
-voting, and publishing new links and comments (TODO).
+voting, and publishing new links and comments.
 
 Please regard this software is beta and incomplete. However,
 basic functionality is complete:
