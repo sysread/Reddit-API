@@ -7,7 +7,7 @@ voting, and publishing new links and comments (TODO).
 Please regard this software is beta and incomplete. However,
 basic functionality is complete:
 
-  * Loggin in
+  * Logging in
   * Listing reddits
   * Searching reddits
   * Get links listing for reddits
@@ -36,21 +36,6 @@ perldoc command.
 
     perldoc Reddit::API
 
-You can also look for information at:
-
-    RT, CPAN's request tracker (report bugs here)
-        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Reddit-API
-
-    AnnoCPAN, Annotated CPAN documentation
-        http://annocpan.org/dist/Reddit-API
-
-    CPAN Ratings
-        http://cpanratings.perl.org/d/Reddit-API
-
-    Search CPAN
-        http://search.cpan.org/dist/Reddit-API/
-
-
 LICENSE AND COPYRIGHT
 
 Copyright (C) 2012 "Jeff Ober"
@@ -60,4 +45,3 @@ under the terms of either: the GNU General Public License as published
 by the Free Software Foundation; or the Artistic License.
 
 See http://dev.perl.org/licenses/ for more information.
-
