@@ -591,7 +591,7 @@ provided, it will be read and parsed as JSON. If session data is found, it
 is restored. Otherwise, a new session is started.
 
 
-=item is_logged_in()
+=item is_logged_in
 
 Returns true(ish) if there is an active login session. No attempt is made to
 validate the current session against the server.
@@ -615,7 +615,7 @@ stores the session file path for future use.
 Attempts to log the user in. Throws an error on failure.
 
 
-=item me()
+=item me
 
 Returns a Reddit::API::Account object
 
@@ -626,35 +626,35 @@ Returns a list of Reddit::API::SubReddit objects for C<$type>, where C<$type>
 is a C<SUBREDDITS_*> constant.
 
 
-=item my_subreddits()
+=item my_subreddits
 
 Syntactic sugar for C<list_subreddits(SUBREDDITS_MINE)>. Throws an error if
 the user is not logged in.
 
 
-=item home_subreddits()
+=item home_subreddits
 
 Syntactic sugar for C<list_subreddits(SUBREDDITS_HOME)>. Throws an error if
 the user is not logged in.
 
 
-=item mod_subreddits()
+=item mod_subreddits
 
 Syntactic sugar for C<list_subreddits(SUBREDDITS_MOD)>. Throws an error if
 the user is not logged in.
 
 
-=item contrib_subreddits()
+=item contrib_subreddits
 
 Syntactic sugar for C<list_subreddits(SUBREDDITS_CONTRIB)>.
 
 
-=item popular_subreddits()
+=item popular_subreddits
 
 Syntactic sugar for C<list_subreddits(SUBREDDITS_POPULAR)>.
 
 
-=item new_subreddits()
+=item new_subreddits
 
 Syntactic sugar for C<list_subreddits(SUBREDDITS_NEW)>.
 
