@@ -263,6 +263,8 @@ sub login {
     my ($self, $usr, $pwd) = @_;
     !$usr && croak 'Username expected';
     !$pwd && croak 'Password expected';
+    
+    DEBUG('Log in user %s', $usr);
 
     my $result = $self->api_json_request(
         api  => API_LOGIN,
@@ -283,6 +285,7 @@ sub login {
 
 sub me {
     my $self = shift;
+    DEBUG('Request user account info');
     $self->require_login;
     if ($self->is_logged_in) {
         my $result = $self->api_json_request(api => API_ME);
@@ -292,6 +295,7 @@ sub me {
 
 sub list_subreddits {
     my ($self, $type) = @_;
+    DEBUG('List subreddits [%s]', $type);
     defined $type || croak 'Expected $type"';
     
     $self->require_login
@@ -322,6 +326,7 @@ sub new_subreddits     { return $_[0]->list_subreddits(SUBREDDITS_NEW)     }
 
 sub info {
     my ($self, $id) = @_;
+    DEBUG('Get info for id %s', $id);
     defined $id || croak 'Expected $id';
     my $result = $self->api_json_request(api => API_INFO, args => [$id]);
     return $result;
@@ -329,6 +334,7 @@ sub info {
 
 sub find_subreddits {
     my ($self, $query) = @_;
+    DEBUG('Search subreddits: %s', $query);
     my $result = $self->api_json_request(api => API_SEARCH, data => { q => $query });
     my %subreddits = map {
         $_->{data}{display_name} => Reddit::API::SubReddit->new($self, $_->{data})
@@ -343,6 +349,8 @@ sub fetch_links {
     my $limit     = $param{limit}     || Reddit::API::DEFAULT_LIMIT();
     my $before    = $param{before};
     my $after     = $param{after};
+    
+    DEBUG('Fetch links (%s/%s, %d links from %s to %s', $subreddit, $view, $limit, ($before || '-'), ($after || '-'));
 
     # Get subreddit and path
     $subreddit = subreddit($subreddit);
@@ -376,6 +384,8 @@ sub submit_link {
     my $subreddit = $param{subreddit} || '';
     my $title     = $param{title}     || croak 'Expected "title"';
     my $url       = $param{url}       || croak 'Expected "url"';
+    
+    DEBUG('Submit link to %s: %s', $subreddit, $title, $url);
 
     $subreddit = subreddit($subreddit);
     $self->require_login;
@@ -395,6 +405,8 @@ sub submit_text {
     my $subreddit = $param{subreddit} || '';
     my $title     = $param{title}     || croak 'Expected "title"';
     my $text      = $param{text}      || croak 'Expected "text"';
+    
+    DEBUG('Submit text to %s: %s', $subreddit, $title);
 
     $subreddit = subreddit($subreddit);
     $self->require_login;
@@ -428,6 +440,8 @@ sub submit_comment {
     my ($self, %param) = @_;
     my $parent_id = $param{parent_id} || croak 'Expected "parent_id"';
     my $comment   = $param{text}      || croak 'Expected "text"';
+    
+    DEBUG('Submit comment under %s', $parent_id);
 
     $self->require_login;
     my $result = $self->api_json_request(api => API_COMMENT, data => {
@@ -447,6 +461,7 @@ sub vote {
     my ($self, $name, $direction) = @_;
     defined $name      || croak 'Expected $name';
     defined $direction || croak 'Expected $direction';
+    DEBUG('Vote %d for %s', $direction, $name);
     croak 'Invalid vote direction' unless "$direction" =~ /^(-1|0|1)$/;
     $self->require_login;
     $self->api_json_request(api => API_VOTE, data => { dir => $direction, id  => $name });
@@ -459,6 +474,7 @@ sub vote {
 sub save {
     my $self = shift;
     my $name = shift || croak 'Expected $name';
+    DEBUG('Save %s', $name);
     $self->require_login;
     $self->api_json_request(api => API_SAVE, data => { id => $name });
 }
@@ -466,6 +482,7 @@ sub save {
 sub unsave {
     my $self = shift;
     my $name = shift || croak 'Expected $name';
+    DEBUG('Unsave %s', $name);
     $self->require_login;
     $self->api_json_request(api => API_UNSAVE, data => { id => $name });
 }
@@ -473,6 +490,7 @@ sub unsave {
 sub hide {
     my $self = shift;
     my $name = shift || croak 'Expected $name';
+    DEBUG('Hide %s', $name);
     $self->require_login;
     $self->api_json_request(api => API_HIDE, data => { id => $name });
 }
@@ -480,6 +498,7 @@ sub hide {
 sub unhide {
     my $self = shift;
     my $name = shift || croak 'Expected $name';
+    DEBUG('Unhide %s', $name);
     $self->require_login;
     $self->api_json_request(api => API_UNHIDE, data => { id => $name });
 }
@@ -563,6 +582,12 @@ This is the user agent string, and defaults to C<Reddit::API/$VERSION>.
 =item $DEBUG
 
 When set to true, outputs a small amount of debugging information.
+
+
+=item $MOCK_REQUEST
+
+When set to true, uses mock requests and test data in the t/data directory.
+This prevents tests from making actual requests to Reddit's servers.
 
 
 =back
