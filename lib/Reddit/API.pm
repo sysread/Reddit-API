@@ -2,21 +2,17 @@ package Reddit::API;
 
 our $VERSION = '0.01'; ## no critic
 
-use strict;
-use warnings;
 use Carp;
-
 use LWP::UserAgent qw//;
 use HTTP::Request  qw//;
-use URI::Encode    qw/uri_encode/;
 use JSON           qw//;
 use POSIX          qw/strftime/;
-
 
 require Reddit::API::Account;
 require Reddit::API::Comment;
 require Reddit::API::Link;
 require Reddit::API::SubReddit;
+require Reddit::API::Request;
 
 #===============================================================================
 # Constants
@@ -61,9 +57,10 @@ use constant SUBREDDITS_MOD     => 'moderator';
 # Parameters
 #===============================================================================
 
-our $DEBUG    = 0;
-our $BASE_URL = 'http://www.reddit.com';
-our $UA       = sprintf 'Reddit::API/%f', $VERSION;
+our $DEBUG        = 0;
+our $MOCK_REQUEST = 0;
+our $BASE_URL     = 'http://www.reddit.com';
+our $UA           = sprintf 'Reddit::API/%f', $VERSION;
 
 our @API;
 $API[API_ME        ] = ['GET',  '/api/me'        ];
@@ -91,11 +88,6 @@ sub DEBUG {
 	    chomp $msg;
 	    warn sprintf("[%s] [ %s ]\n", $ts, $msg);
     }
-}
-
-sub build_query {
-    my $param = shift;
-    join '&', map {uri_encode($_) . '=' . uri_encode($param->{$_})} keys %$param;
 }
 
 sub subreddit {
@@ -127,9 +119,13 @@ use fields (
 
 sub new {
     my ($class, %param) = @_;
-    my $session = $param{session_file};
-    my $self    = fields::new($class);
-    $self->load_session($session) if $session;
+    my $self = fields::new($class);
+    
+    if ($param{session_file}) {
+        $self->{session_file} = $param{session_file};
+        $self->load_session;
+    }
+    
     return $self;
 }
 
@@ -139,47 +135,26 @@ sub new {
 
 sub request {
     my ($self, $method, $path, $query, $post_data) = @_;
-    $method = uc $method;
-    $path   =~ s/^\///; # trim off leading slash
+    # Trim leading slashes off of the path
+    $path =~ s/^\/+//;
+    
+    my $request = Reddit::API::Request->new(
+        user_agent => $UA,
+        url        => sprintf('%s/%s', $BASE_URL, $path),
+        method     => $method,
+        query      => $query,
+        post_data  => $post_data,
+        modhash    => $self->{modhash},
+        cookie     => $self->{cookie},
+    );
 
-    my $request = HTTP::Request->new();
-    my $url     = sprintf('%s/%s', $BASE_URL, $path);
-
-    $url = sprintf('%s?%s', $url, build_query($query))
-        if $query;
-
-    $request->header('Cookie', sprintf('reddit_session=%s', $self->{cookie}))
-        if $self->{cookie};
-
-    if ($method eq 'POST') {
-        $post_data = {} unless defined $post_data;
-        $post_data->{modhash} = $self->{modhash} if $self->{modhash};
-        $post_data->{uh}      = $self->{modhash} if $self->{modhash};
-
-        $request->uri($url);
-        $request->method('POST');
-        $request->content_type('application/x-www-form-urlencoded');
-        $request->content(build_query($post_data));
-    } else {
-        $request->uri($url);
-        $request->method('GET');
-    }
-
-    DEBUG('%4s request to %s', $method, $url);
-
-    my $ua  = LWP::UserAgent->new(agent => $UA, env_proxy => 1);
-    my $res = $ua->request($request);
-
-    if ($res->is_success) {
-        return $res->content;
-    } else {
-        croak sprintf('Request error: %s', $res->status_line);
-    }
+    return $request->send;
 }
 
 sub json_request {
     my ($self, $method, $path, $query, $post_data) = @_;
-
+    DEBUG('%4s JSON', $method);
+    
     if ($method eq 'POST') {
         $post_data ||= {};
 	    $post_data->{api_type} = 'json';
@@ -241,6 +216,8 @@ sub save_session {
     # Prepare session and file path
     my $session   = { modhash => $self->{modhash}, cookie => $self->{cookie} };
     my $file_path = defined $file ? $file : $self->{session_file};
+    
+    DEBUG('Save session to %s', $file_path);
 
     # Write out session
     open(my $fh, '>', $file_path) or croak $!;
@@ -255,18 +232,25 @@ sub save_session {
 
 sub load_session {
     my ($self, $file) = @_;
-    if (-f $file) {
-        open(my $fh, '<', $file) or croak $!;
+    $self->{session_file} || $file || croak 'Expected $file';
+    my $file_path = defined $file ? $file : $self->{session_file};
+    
+    DEBUG('Load session from %s', $file_path);
+
+    if (-f $file_path) {
+        open(my $fh, '<', $file_path) or croak $!;
         my $data = do { local $/; <$fh> };
         close $fh;
 
         my $session = JSON::from_json($data);
-        $self->{session_file} = $file;
-        $self->{modhash}      = $session->{modhash};
-        $self->{cookie}       = $session->{cookie};
+        $self->{modhash} = $session->{modhash};
+        $self->{cookie}  = $session->{cookie};
+        
+        DEBUG('Session loaded successfully');
 
         return 1;
     } else {
+        DEBUG('Session file not found');
         return 0;
     }
 }
@@ -432,8 +416,11 @@ sub submit_text {
 sub get_comments {
     my ($self, %param) = @_;
     my $permalink = $param{permalink} || croak 'Expected "permalink"';
-    my $result    = $self->{_session}->json_request('GET', $permalink);
-    my $comments  = $result->[1]{data}{children};
+
+    DEBUG('Retrieve comments for %s', $permalink);
+
+    my $result   = $self->json_request('GET', $permalink);
+    my $comments = $result->[1]{data}{children};
     return [ map { Reddit::API::Comment->new($self, $_->{data}) } @$comments ];
 }
 
@@ -759,12 +746,6 @@ Throws an error if the user is not logged in.
 
 Strips slashes and leading /r from a subreddit to ensure that only
 the "display name" of the subreddit is returned.
-
-
-=item build_query
-
-URI-encodes a hash of parameters into a query suitable for use in
-an HTTP request. Does not include the leading '?'.
 
 
 =item request

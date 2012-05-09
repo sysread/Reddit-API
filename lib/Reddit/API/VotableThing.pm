@@ -1,7 +1,5 @@
 package Reddit::API::VotableThing;
 
-use strict;
-use warnings;
 use Carp;
 
 require Reddit::API::Thing;

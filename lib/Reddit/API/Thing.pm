@@ -1,7 +1,5 @@
 package Reddit::API::Thing;
 
-use strict;
-use warnings;
 use Carp;
 use List::Util qw/first/;
 

@@ -1,7 +1,5 @@
 package Reddit::API::SubReddit;
 
-use strict;
-use warnings;
 use Carp;
 
 require Reddit::API;
