@@ -27,6 +27,7 @@ sub new {
     
     if (defined $self->{query}) {
         ref $self->{query} eq 'HASH' || croak 'Expected HASH ref for "query"';
+        $self->{url} = sprintf('%s?%s', $self->{url}, $self->build_query($self->{query}))
     }
 
     if (defined $self->{post_data}) {
@@ -48,10 +49,7 @@ sub send {
     my $self    = shift;
     my $request = HTTP::Request->new();
     
-    my $url = $self->{url};
-    $url = sprintf('%s?%s', $url, $self->build_query($self->{query}))
-        if $self->{query};
-
+    $request->uri($self->{url});
     $request->header('Cookie', sprintf('reddit_session=%s', $self->{cookie}))
         if $self->{cookie};
 
@@ -60,16 +58,14 @@ sub send {
         $post_data->{modhash} = $self->{modhash} if $self->{modhash};
         $post_data->{uh}      = $self->{modhash} if $self->{modhash};
         
-        $request->uri($url);
         $request->method('POST');
         $request->content_type('application/x-www-form-urlencoded');
         $request->content($self->build_query($post_data));
     } else {
-        $request->uri($url);
         $request->method('GET');
     }
 
-    Reddit::API::DEBUG('%4s request to %s', $self->{method}, $url);
+    Reddit::API::DEBUG('%4s request to %s', $self->{method}, $self->{url});
 
     my $ua  = LWP::UserAgent->new(agent => $self->{user_agent}, env_proxy => 1);
     my $res = $ua->request($request);

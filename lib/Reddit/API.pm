@@ -3,9 +3,12 @@ package Reddit::API;
 our $VERSION = '0.01'; ## no critic
 
 use Carp;
+use Data::Dumper   qw//;
+use JSON           qw//;
 use LWP::UserAgent qw//;
 use HTTP::Request  qw//;
-use JSON           qw//;
+use File::Spec     qw//;
+use Digest::MD5    qw/md5_hex/;
 use POSIX          qw/strftime/;
 
 require Reddit::API::Account;
@@ -20,10 +23,10 @@ require Reddit::API::Request;
 
 use constant DEFAULT_LIMIT      => 25;
 
-use constant VIEW_HOT           => '/';
-use constant VIEW_NEW           => '/new';
-use constant VIEW_CONTROVERSIAL => '/controversial';
-use constant VIEW_TOP           => '/top';
+use constant VIEW_HOT           => '';
+use constant VIEW_NEW           => 'new';
+use constant VIEW_CONTROVERSIAL => 'controversial';
+use constant VIEW_TOP           => 'top';
 use constant VIEW_DEFAULT       => VIEW_HOT;
 
 use constant VOTE_UP            => 1;
@@ -45,6 +48,8 @@ use constant API_UNSAVE         => 8;
 use constant API_HIDE           => 9;
 use constant API_UNHIDE         => 10;
 use constant API_SUBREDDITS     => 11;
+use constant API_LINKS_FRONT    => 12;
+use constant API_LINKS_OTHER    => 13;
 
 use constant SUBREDDITS_HOME    => '';
 use constant SUBREDDITS_MINE    => 'mine';
@@ -57,24 +62,27 @@ use constant SUBREDDITS_MOD     => 'moderator';
 # Parameters
 #===============================================================================
 
-our $DEBUG        = 0;
-our $MOCK_REQUEST = 0;
-our $BASE_URL     = 'http://www.reddit.com';
-our $UA           = sprintf 'Reddit::API/%f', $VERSION;
+our $DEBUG           = 0;
+our $MOCK_REQUEST    = 0;
+our $RECORD_REQUESTS = 0;
+our $BASE_URL        = 'http://www.reddit.com';
+our $UA              = sprintf 'Reddit::API/%f', $VERSION;
 
 our @API;
-$API[API_ME        ] = ['GET',  '/api/me'        ];
-$API[API_INFO      ] = ['GET',  '/by_id/%s'      ];
-$API[API_SEARCH    ] = ['GET',  '/reddits/search'];
-$API[API_LOGIN     ] = ['POST', '/api/login/%s'  ];
-$API[API_SUBMIT    ] = ['POST', '/api/submit'    ];
-$API[API_COMMENT   ] = ['POST', '/api/comment'   ];
-$API[API_VOTE      ] = ['POST', '/api/vote'      ];
-$API[API_SAVE      ] = ['POST', '/api/save'      ];
-$API[API_UNSAVE    ] = ['POST', '/api/unsave'    ];
-$API[API_HIDE      ] = ['POST', '/api/hide'      ];
-$API[API_UNHIDE    ] = ['POST', '/api/unhide'    ];
-$API[API_SUBREDDITS] = ['GET',  '/reddits/%s'    ];
+$API[API_ME         ] = ['GET',  '/api/me'        ];
+$API[API_INFO       ] = ['GET',  '/by_id/%s'      ];
+$API[API_SEARCH     ] = ['GET',  '/reddits/search'];
+$API[API_LOGIN      ] = ['POST', '/api/login/%s'  ];
+$API[API_SUBMIT     ] = ['POST', '/api/submit'    ];
+$API[API_COMMENT    ] = ['POST', '/api/comment'   ];
+$API[API_VOTE       ] = ['POST', '/api/vote'      ];
+$API[API_SAVE       ] = ['POST', '/api/save'      ];
+$API[API_UNSAVE     ] = ['POST', '/api/unsave'    ];
+$API[API_HIDE       ] = ['POST', '/api/hide'      ];
+$API[API_UNHIDE     ] = ['POST', '/api/unhide'    ];
+$API[API_SUBREDDITS ] = ['GET',  '/reddits/%s'    ];
+$API[API_LINKS_OTHER] = ['GET',  '/%s'            ];
+$API[API_LINKS_FRONT] = ['GET',  '/r/%s'          ];
 
 #===============================================================================
 # Package routines
@@ -120,12 +128,12 @@ use fields (
 sub new {
     my ($class, %param) = @_;
     my $self = fields::new($class);
-    
+
     if ($param{session_file}) {
         $self->{session_file} = $param{session_file};
         $self->load_session;
     }
-    
+
     return $self;
 }
 
@@ -137,7 +145,7 @@ sub request {
     my ($self, $method, $path, $query, $post_data) = @_;
     # Trim leading slashes off of the path
     $path =~ s/^\/+//;
-    
+
     my $request = Reddit::API::Request->new(
         user_agent => $UA,
         url        => sprintf('%s/%s', $BASE_URL, $path),
@@ -148,13 +156,43 @@ sub request {
         cookie     => $self->{cookie},
     );
 
-    return $request->send;
+    my $result = $request->send;
+
+    if ($RECORD_REQUESTS) {
+        my @values = ($method, $request->{url});
+        
+        if ($query) {
+            my @keys = sort keys %$query;
+            push @values, @keys;
+        }
+        
+        if ($post_data) {
+            my @keys = sort keys %$post_data;
+            push @values, @keys;
+        }
+
+        my @request_lines = split /[\r\n]+/, Data::Dumper::Dumper($request);
+
+        my $filename = sprintf '%s.json', md5_hex(@values);
+        my $filepath = File::Spec->catfile($RECORD_REQUESTS, $filename);
+        ($filepath)  = $filepath =~ /(.*)/;
+
+        open my $fh, '>', $filepath or croak $!;
+        print $fh "# === Request Data ===\n";
+        print $fh "# $_\n" foreach @request_lines;
+        print $fh "# === Response Data ===\n";
+
+        print $fh $result;
+        close $fh;
+    }
+
+    return $result;
 }
 
 sub json_request {
     my ($self, $method, $path, $query, $post_data) = @_;
     DEBUG('%4s JSON', $method);
-    
+
     if ($method eq 'POST') {
         $post_data ||= {};
 	    $post_data->{api_type} = 'json';
@@ -183,6 +221,8 @@ sub api_json_request {
     my $api  = $param{api}  || croak 'Expected "api"';
     my $args = $param{args} || [];
     my $data = $param{data};
+
+    DEBUG('API call %d', $api);
 
     my $info   = $API[$api] || croak "Unknown API: $api";
     my ($method, $path) = @$info;
@@ -216,7 +256,7 @@ sub save_session {
     # Prepare session and file path
     my $session   = { modhash => $self->{modhash}, cookie => $self->{cookie} };
     my $file_path = defined $file ? $file : $self->{session_file};
-    
+
     DEBUG('Save session to %s', $file_path);
 
     # Write out session
@@ -234,7 +274,7 @@ sub load_session {
     my ($self, $file) = @_;
     $self->{session_file} || $file || croak 'Expected $file';
     my $file_path = defined $file ? $file : $self->{session_file};
-    
+
     DEBUG('Load session from %s', $file_path);
 
     if (-f $file_path) {
@@ -245,7 +285,7 @@ sub load_session {
         my $session = JSON::from_json($data);
         $self->{modhash} = $session->{modhash};
         $self->{cookie}  = $session->{cookie};
-        
+
         DEBUG('Session loaded successfully');
 
         return 1;
@@ -263,7 +303,7 @@ sub login {
     my ($self, $usr, $pwd) = @_;
     !$usr && croak 'Username expected';
     !$pwd && croak 'Password expected';
-    
+
     DEBUG('Log in user %s', $usr);
 
     my $result = $self->api_json_request(
@@ -297,7 +337,7 @@ sub list_subreddits {
     my ($self, $type) = @_;
     DEBUG('List subreddits [%s]', $type);
     defined $type || croak 'Expected $type"';
-    
+
     $self->require_login
 	    if $type eq SUBREDDITS_MOD
 	    || $type eq SUBREDDITS_MINE
@@ -345,29 +385,27 @@ sub find_subreddits {
 sub fetch_links {
     my ($self, %param) = @_;
     my $subreddit = $param{subreddit} || '';
-    my $view      = $param{view}      || Reddit::API::VIEW_DEFAULT();
-    my $limit     = $param{limit}     || Reddit::API::DEFAULT_LIMIT();
+    my $view      = $param{view}      || VIEW_DEFAULT;
+    my $limit     = $param{limit}     || DEFAULT_LIMIT;
     my $before    = $param{before};
     my $after     = $param{after};
-    
-    DEBUG('Fetch links (%s/%s, %d links from %s to %s', $subreddit, $view, $limit, ($before || '-'), ($after || '-'));
 
-    # Get subreddit and path
-    $subreddit = subreddit($subreddit);
-    my $path = $subreddit
-        ? sprintf('/r/%s/%s', $subreddit, $view)
-        : sprintf('/%s', $view);
+    DEBUG('Fetch %d link(s): %s/%s?before=%s&after=%s', $limit, $subreddit, $view, ($before || '-'), ($after || '-'));
 
-    my @args = ('GET', $path);
+    my $query  = {};
     if ($before || $after || $limit) {
-	    my %query;
-	    $query{limit}  = $limit  if defined $limit;
-	    $query{before} = $before if defined $before;
-	    $query{after}  = $after  if defined $after;
-	    push @args, \%query;
+	    $query->{limit}  = $limit  if defined $limit;
+	    $query->{before} = $before if defined $before;
+	    $query->{after}  = $after  if defined $after;
     }
 
-    my $result = $self->json_request(@args);
+    $subreddit = subreddit($subreddit);
+    my $result = $self->api_json_request(
+        api  => ($subreddit ? API_LINKS_OTHER : API_LINKS_FRONT),
+        args => [$view],
+        data => $query,
+    );
+
     return {
         before => $result->{data}{before},
         after  => $result->{data}{after},
@@ -384,7 +422,7 @@ sub submit_link {
     my $subreddit = $param{subreddit} || '';
     my $title     = $param{title}     || croak 'Expected "title"';
     my $url       = $param{url}       || croak 'Expected "url"';
-    
+
     DEBUG('Submit link to %s: %s', $subreddit, $title, $url);
 
     $subreddit = subreddit($subreddit);
@@ -405,7 +443,7 @@ sub submit_text {
     my $subreddit = $param{subreddit} || '';
     my $title     = $param{title}     || croak 'Expected "title"';
     my $text      = $param{text}      || croak 'Expected "text"';
-    
+
     DEBUG('Submit text to %s: %s', $subreddit, $title);
 
     $subreddit = subreddit($subreddit);
@@ -440,7 +478,7 @@ sub submit_comment {
     my ($self, %param) = @_;
     my $parent_id = $param{parent_id} || croak 'Expected "parent_id"';
     my $comment   = $param{text}      || croak 'Expected "text"';
-    
+
     DEBUG('Submit comment under %s', $parent_id);
 
     $self->require_login;
@@ -588,6 +626,13 @@ When set to true, outputs a small amount of debugging information.
 
 When set to true, uses mock requests and test data in the t/data directory.
 This prevents tests from making actual requests to Reddit's servers.
+
+
+=item $RECORD_REQUESTS
+
+Used to record requests and save the output to generate mock data for tests.
+C<$RECORD_REQUESTS> is set to the relative path to the directory in which files
+should be saved.
 
 
 =back
