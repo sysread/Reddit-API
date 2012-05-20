@@ -32,7 +32,7 @@ use Reddit::API;
 { ## callback_fetch_links
     my $reddit = Reddit::API->new();
     my $result = { data => { before => 'before', after => 'after', children => [ { data => {} } ] } };
-    my $links = $reddit->callback_fetch_links($result);
+    my $links = eval {$reddit->callback_fetch_links($result) };
     ok(!$@, 'callback_fetch_links');
     ok($links->{before} eq 'before', 'callback_fetch_links');
     ok($links->{after}  eq 'after',  'callback_fetch_links');
@@ -42,9 +42,17 @@ use Reddit::API;
 { ## callback_submit
     my $reddit = Reddit::API->new();
     my $result = { data => { name => 'foo' } };
-    my $link   = $reddit->callback_submit($result);
+    my $link   = eval { $reddit->callback_submit($result) };
     ok(!$@, 'callback_submit');
     ok($link eq 'foo', 'callback_submit');
+}
+
+{ ## callback_submit_comment
+    my $reddit  = Reddit::API->new();
+    my $result  = { data => { things => [ { data => { id => 'foo' } } ] } };
+    my $comment = eval { $reddit->callback_submit_comment($result) };
+    ok(!$@, 'callback_submit_comment');
+    ok($comment eq 'foo', 'callback_submit_comment');
 }
 
 1;
