@@ -1,7 +1,5 @@
 package Reddit::API::VotableThing;
 
-use strict;
-use warnings;
 use Carp;
 
 require Reddit::API::Thing;
@@ -9,9 +7,15 @@ require Reddit::API::Thing;
 use base   qw/Reddit::API::Thing/;
 use fields qw/ups downs likes score/;
 
+# likes may be true, false, or null, based on user vote
+sub set_likes {
+    my ($self, $value) = @_;
+    $self->set_bool('likes', $value) if defined $value;
+}
+
 sub vote {
     my ($self, $direction) = @_;
-    $self->vote($self->{name}, $direction);
+    $self->{_session}->vote($self->{name}, $direction);
 }
 
 sub comment {
