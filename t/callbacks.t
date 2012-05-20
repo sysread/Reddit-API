@@ -1,8 +1,8 @@
 use strict;
 use warnings;
 use Carp;
-use Test::More qw/no_plan/;
 use Reddit::API;
+use Test::More tests => 15;
 
 { ## callback_login
     my $reddit = Reddit::API->new();

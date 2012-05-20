@@ -663,6 +663,11 @@ stores the session file path for future use.
 Attempts to log the user in. Throws an error on failure.
 
 
+=item callback_login
+
+Internal method; helper for C<login>.
+
+
 =item me
 
 Returns a Reddit::API::Account object
@@ -672,6 +677,11 @@ Returns a Reddit::API::Account object
 
 Returns a list of Reddit::API::SubReddit objects for C<$type>, where C<$type>
 is a C<SUBREDDITS_*> constant.
+
+
+=item callback_list_subreddits
+
+Internal method; helper for C<list_subreddits>.
 
 
 =item my_subreddits
@@ -729,6 +739,11 @@ slicing the feed up, just as the reddit urls themselves do. Data is returned
 as a hash with three keys, I<before>, I<after>, and I<items>.
 
 
+=item callback_fetch_links
+
+Internal method; helper for C<fetch_links>.
+
+
 =item submit_link(subreddit => ..., title => ..., url => ...)
 
 Submits a link to a reddit. Returns the id of the new link.
@@ -737,6 +752,11 @@ Submits a link to a reddit. Returns the id of the new link.
 =item submit_text(subreddit => ..., title => ..., text => ...)
 
 Submits a self-post to a reddit. Returns the id of the new post.
+
+
+=item callback_submit
+
+Internal method; helper for C<submit_link> and C<submit_text>.
 
 
 =item get_comments($permalink)
@@ -756,6 +776,11 @@ parameter.
 =item submit_comment(parent_id => ..., text => ...)
 
 Submits a new comment underneath C<parent_id>.
+
+
+=item callback_sbumit_comment
+
+Internal method; helper for C<submit_comment>.
 
 
 =item vote(item_id => ..., direction => ...)

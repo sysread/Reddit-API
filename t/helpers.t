@@ -4,7 +4,7 @@ use Carp;
 use JSON       qw//;
 use File::Temp qw/tempfile/;
 use Reddit::API;
-use Test::More qw/no_plan/;
+use Test::More tests => 13;
 
 my ($fh, $filename) = tempfile();
 my $reddit = Reddit::API->new(session_file => $filename);
