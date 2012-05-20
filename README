@@ -18,7 +18,7 @@ basic functionality is complete:
   * Hide/unhide
   
 Still to do:
-  * Unit tests
+  * Better test coverage
   * More complete logging for debugging
   * User-configurable error handler function
 
