@@ -1,7 +1,5 @@
 package Reddit::API::Account;
 
-use strict;
-use warnings;
 use Carp;
 
 require Reddit::API::Thing;
