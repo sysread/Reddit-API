@@ -28,7 +28,7 @@ sub load_from_source_data {
                 $self->set_bool($field, $source_data->{$field});
             } else {
 	            eval { $self->{$field} = $source_data->{$field} };
-	            warn sprintf("Field %s is missing from package %s\n", $field, ref $self)
+	            carp sprintf("Field %s is missing from package %s\n", $field, ref $self)
 	                if $@;
             }
         }

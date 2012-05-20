@@ -63,8 +63,6 @@ use constant SUBREDDITS_MOD     => 'moderator';
 #===============================================================================
 
 our $DEBUG           = 0;
-our $MOCK_REQUEST    = 0;
-our $RECORD_REQUESTS = 0;
 our $BASE_URL        = 'http://www.reddit.com';
 our $UA              = sprintf 'Reddit::API/%f', $VERSION;
 
@@ -156,37 +154,7 @@ sub request {
         cookie     => $self->{cookie},
     );
 
-    my $result = $request->send;
-
-    if ($RECORD_REQUESTS) {
-        my @values = ($method, $request->{url});
-        
-        if ($query) {
-            my @keys = sort keys %$query;
-            push @values, @keys;
-        }
-        
-        if ($post_data) {
-            my @keys = sort keys %$post_data;
-            push @values, @keys;
-        }
-
-        my @request_lines = split /[\r\n]+/, Data::Dumper::Dumper($request);
-
-        my $filename = sprintf '%s.json', md5_hex(@values);
-        my $filepath = File::Spec->catfile($RECORD_REQUESTS, $filename);
-        ($filepath)  = $filepath =~ /(.*)/;
-
-        open my $fh, '>', $filepath or croak $!;
-        print $fh "# === Request Data ===\n";
-        print $fh "# $_\n" foreach @request_lines;
-        print $fh "# === Response Data ===\n";
-
-        print $fh $result;
-        close $fh;
-    }
-
-    return $result;
+    return $request->send;
 }
 
 sub json_request {
@@ -218,9 +186,12 @@ sub json_request {
 
 sub api_json_request {
     my ($self, %param) = @_;
-    my $api  = $param{api}  || croak 'Expected "api"';
-    my $args = $param{args} || [];
-    my $data = $param{data};
+    my $args     = $param{args} || [];
+    my $api      = $param{api};
+    my $data     = $param{data};
+    my $callback = $param{callback};
+
+    croak 'Expected "api"' unless defined $api;
 
     DEBUG('API call %d', $api);
 
@@ -235,7 +206,19 @@ sub api_json_request {
         $post_data = $data;
     }
 
-    return $self->json_request($method, $path, $query, $post_data);
+    my $result = $self->json_request($method, $path, $query, $post_data);
+    my @errors = @{$result->{errors}};
+
+    if (@errors) {
+        my $message = join(' | ', map { join(', ', @$_) } @errors);
+        croak $message;
+    }
+
+    if (defined $callback && ref $callback eq 'CODE') {
+        return $callback->($result);
+    } else {
+        return $result;
+    }
 }
 
 sub is_logged_in {
@@ -281,14 +264,18 @@ sub load_session {
         open(my $fh, '<', $file_path) or croak $!;
         my $data = do { local $/; <$fh> };
         close $fh;
-
-        my $session = JSON::from_json($data);
-        $self->{modhash} = $session->{modhash};
-        $self->{cookie}  = $session->{cookie};
-
-        DEBUG('Session loaded successfully');
-
-        return 1;
+        
+        if ($data) {
+            my $session = JSON::from_json($data);
+            $self->{modhash} = $session->{modhash};
+            $self->{cookie}  = $session->{cookie};
+    
+            DEBUG('Session loaded successfully');
+    
+            return 1;
+        } else {
+            return 0;
+        }
     } else {
         DEBUG('Session file not found');
         return 0;
@@ -306,31 +293,31 @@ sub login {
 
     DEBUG('Log in user %s', $usr);
 
-    my $result = $self->api_json_request(
-        api  => API_LOGIN,
-        args => [$usr],
-        data => { user => $usr, passwd => $pwd },
+    $self->api_json_request(
+        api      => API_LOGIN,
+        args     => [$usr],
+        data     => { user => $usr, passwd => $pwd },
+        callback => sub { $self->callback_login(@_) },
     );
+}
 
-    my @errors = @{$result->{errors}};
-
-    if (@errors) {
-        my $message = join(' | ', map { join(', ', @$_) } @errors);
-        croak sprintf('Login errors: %s', $message);
-    } else {
-        $self->{modhash} = $result->{data}{modhash};
-        $self->{cookie}  = $result->{data}{cookie};
-    }
+sub callback_login {
+    my ($self, $result) = @_;
+    DEBUG('Log in successful');
+    $self->{modhash} = $result->{data}{modhash};
+    $self->{cookie}  = $result->{data}{cookie};
 }
 
 sub me {
     my $self = shift;
     DEBUG('Request user account info');
     $self->require_login;
-    if ($self->is_logged_in) {
-        my $result = $self->api_json_request(api => API_ME);
-	    return Reddit::API::Account->new($self, $result->{data});
-    }
+    return $self->api_json_request(api => API_ME, callback => sub { $self->callback_login(@_) });
+}
+
+sub callback_me {
+    my ($self, $result) = @_;
+    return Reddit::API::Account->new($self, $result->{data});
 }
 
 sub list_subreddits {
@@ -344,12 +331,20 @@ sub list_subreddits {
 	    || $type eq SUBREDDITS_CONTRIB;
 
     if ($self->is_logged_in) {
-        my $result = $self->api_json_request(api => API_SUBREDDITS, args => [$type]);
-        return {
-            map { $_->{data}{display_name} => Reddit::API::SubReddit->new($self, $_->{data}) }
-                @{$result->{data}{children}}
-        };
+        $self->api_json_request(
+            api      => API_SUBREDDITS,
+            args     => [$type],
+            callback => sub { $self->callback_list_subreddits(@_) },
+        );
     }
+}
+
+sub callback_list_subreddits {
+    my ($self, $result) = @_;
+    return {
+        map { $_->{data}{display_name} => Reddit::API::SubReddit->new($self, $_->{data}) }
+            @{$result->{data}{children}}
+    };
 }
 
 sub mod_subreddits     { $_[0]->require_login; return $_[0]->list_subreddits(SUBREDDITS_MOD)     }
@@ -368,18 +363,17 @@ sub info {
     my ($self, $id) = @_;
     DEBUG('Get info for id %s', $id);
     defined $id || croak 'Expected $id';
-    my $result = $self->api_json_request(api => API_INFO, args => [$id]);
-    return $result;
+    return $self->api_json_request(api => API_INFO, args => [$id]);
 }
 
 sub find_subreddits {
     my ($self, $query) = @_;
     DEBUG('Search subreddits: %s', $query);
-    my $result = $self->api_json_request(api => API_SEARCH, data => { q => $query });
-    my %subreddits = map {
-        $_->{data}{display_name} => Reddit::API::SubReddit->new($self, $_->{data})
-    } @{$result->{data}{children}};
-    return \%subreddits;
+    return $self->api_json_request(
+        api      => API_SEARCH,
+        data     => { q => $query },
+        callback => sub { $self->callback_list_subreddits(@_) },
+    );
 }
 
 sub fetch_links {
@@ -400,12 +394,16 @@ sub fetch_links {
     }
 
     $subreddit = subreddit($subreddit);
-    my $result = $self->api_json_request(
-        api  => ($subreddit ? API_LINKS_OTHER : API_LINKS_FRONT),
-        args => [$view],
-        data => $query,
+    return $self->api_json_request(
+        api      => ($subreddit ? API_LINKS_OTHER : API_LINKS_FRONT),
+        args     => [$view],
+        data     => $query,
+        callback => sub { $self->callback_fetch_links(@_) },
     );
+}
 
+sub callback_fetch_links {
+    my ($self, $result) = @_;
     return {
         before => $result->{data}{before},
         after  => $result->{data}{after},
@@ -428,14 +426,13 @@ sub submit_link {
     $subreddit = subreddit($subreddit);
     $self->require_login;
 
-    my $result = $self->api_json_request(api => API_SUBMIT, data => {
-        title => $title,
-        url   => $url,
-        sr    => $subreddit,
-        kind  => SUBMIT_LINK,
+    return $self->api_json_request(api => API_SUBMIT, data => {
+        title    => $title,
+        url      => $url,
+        sr       => $subreddit,
+        kind     => SUBMIT_LINK,
+        callback => sub { $self->callback_submit(@_) },
     });
-
-    return $result->{data}{name};
 }
 
 sub submit_text {
@@ -449,13 +446,17 @@ sub submit_text {
     $subreddit = subreddit($subreddit);
     $self->require_login;
 
-    my $result = $self->api_json_request(api => API_SUBMIT, data => {
-        title => $title,
-        text  => $text,
-        sr    => $subreddit,
-        kind  => SUBMIT_SELF,
+    return $self->api_json_request(api => API_SUBMIT, data => {
+        title    => $title,
+        text     => $text,
+        sr       => $subreddit,
+        kind     => SUBMIT_SELF,
+        callback => sub { $self->callback_submit(@_) },
     });
+}
 
+sub callback_submit {
+    my ($self, $result) = @_;
     return $result->{data}{name};
 }
 
@@ -482,13 +483,16 @@ sub submit_comment {
     DEBUG('Submit comment under %s', $parent_id);
 
     $self->require_login;
-    my $result = $self->api_json_request(api => API_COMMENT, data => {
+    return $self->api_json_request(api => API_COMMENT, data => {
         thing_id => $parent_id,
         text     => $comment,
+        callback => sub { $self->callback_submit_comment(@_) },
     });
+}
 
-    my $id = $result->{data}{things}[0]{data}{id};
-    return $id;
+sub callback_submit_comment {
+    my ($self, $result) = @_;
+    return $result->{data}{things}[0]{data}{id};
 }
 
 #===============================================================================
@@ -620,19 +624,6 @@ This is the user agent string, and defaults to C<Reddit::API/$VERSION>.
 =item $DEBUG
 
 When set to true, outputs a small amount of debugging information.
-
-
-=item $MOCK_REQUEST
-
-When set to true, uses mock requests and test data in the t/data directory.
-This prevents tests from making actual requests to Reddit's servers.
-
-
-=item $RECORD_REQUESTS
-
-Used to record requests and save the output to generate mock data for tests.
-C<$RECORD_REQUESTS> is set to the relative path to the directory in which files
-should be saved.
 
 
 =back
