@@ -27,7 +27,7 @@ sub new {
     
     if (defined $self->{query}) {
         ref $self->{query} eq 'HASH' || croak 'Expected HASH ref for "query"';
-        $self->{url} = sprintf('%s?%s', $self->{url}, $self->build_query($self->{query}))
+        $self->{url} = sprintf('%s?%s', $self->{url}, build_query($self->{query}))
     }
 
     if (defined $self->{post_data}) {
@@ -41,8 +41,8 @@ sub new {
 }
 
 sub build_query {
-    my ($self, $param) = @_;
-    join '&', map {uri_encode($_) . '=' . uri_encode($param->{$_})} keys %$param;
+    my $param = shift or return '';
+    join '&', map {uri_encode($_) . '=' . uri_encode($param->{$_})} sort keys %$param;
 }
 
 sub send {
@@ -60,7 +60,7 @@ sub send {
         
         $request->method('POST');
         $request->content_type('application/x-www-form-urlencoded');
-        $request->content($self->build_query($post_data));
+        $request->content(build_query($post_data));
     } else {
         $request->method('GET');
     }
@@ -111,7 +111,8 @@ Creates a new Reddit::Request::API instance. Parameters:
 
 =item build_query($query)
 
-Builds a URI-escaped query string from a hash of query parameters.
+Builds a URI-escaped query string from a hash of query parameters. This is *not*
+a method of the class, but a package routine.
 
 
 =item send
