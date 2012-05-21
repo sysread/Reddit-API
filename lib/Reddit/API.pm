@@ -670,7 +670,12 @@ Internal method; helper for C<login>.
 
 =item me
 
-Returns a Reddit::API::Account object
+Returns a Reddit::API::Account object.
+
+
+=item callback_me
+
+Internal method; helper for C<me>.
 
 
 =item list_subreddits($type)
@@ -778,7 +783,7 @@ parameter.
 Submits a new comment underneath C<parent_id>.
 
 
-=item callback_sbumit_comment
+=item callback_submit_comment
 
 Internal method; helper for C<submit_comment>.
 

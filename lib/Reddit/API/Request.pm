@@ -78,3 +78,55 @@ sub send {
 }
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Reddit::API::Request
+
+=head1 DESCRIPTION
+
+HTTP request driver for Reddit::API. Uses LWP to perform GET and POST requests
+to the reddit.com servers. This module is used internally by the Reddit::API
+and is not designed for external use.
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new(%params)
+ 
+Creates a new Reddit::Request::API instance. Parameters:
+
+    user_agent    User agent string
+    url           Target URL
+    query         Hash of query parameters
+    post_data     Hash of POST parameters
+    cookie        Reddit session cookie
+    modhash       Reddit session modhash
+
+
+=item build_query($query)
+
+Builds a URI-escaped query string from a hash of query parameters.
+
+
+=item send
+
+Performs the HTTP request and returns the result. Croaks on HTTP error.
+
+
+=back
+
+=head1 AUTHOR
+
+Jeff Ober L<mailto:jeffober@gmail.com>
+
+=head1 LICENSE
+
+BSD license
+
+=cut
