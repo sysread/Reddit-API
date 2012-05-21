@@ -5,6 +5,7 @@ Revision history for Reddit-API
           for easier testing
         * Added unit tests for routines that do not directly connect to Reddit's
           servers
+        * Miscellaneous bugfixes
          
 0.01    2012-05-09
         * Initial release
