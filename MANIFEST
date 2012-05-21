@@ -14,3 +14,6 @@ t/manifest.t
 t/pod-coverage.t
 t/pod.t
 t/boilerplate.t
+t/callbacks.t
+t/helpers.t
+t/models.t

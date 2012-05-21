@@ -1,5 +1,10 @@
 Revision history for Reddit-API
 
-0.01    Date/time
-        First version, released on an unsuspecting world.
-
+0.02    2012-05-??
+        * Request and data processing are now separated where possible to allow
+          for easier testing
+        * Added unit tests for routines that do not directly connect to Reddit's
+          servers
+         
+0.01    2012-05-09
+        * Initial release

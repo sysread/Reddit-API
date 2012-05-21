@@ -38,6 +38,10 @@ perldoc command.
 
     perldoc Reddit::API
 
+More information about this module may be found on github:
+
+    https://github.com/jsober/Reddit-API
+
 LICENSE AND COPYRIGHT
 
 Copyright (C) 2012 "Jeff Ober"
