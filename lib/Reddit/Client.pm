@@ -207,11 +207,15 @@ sub api_json_request {
     }
 
     my $result = $self->json_request($method, $path, $query, $post_data);
-    my @errors = @{$result->{errors}};
 
-    if (@errors) {
-        my $message = join(' | ', map { join(', ', @$_) } @errors);
-        croak $message;
+    if (exists $result->{errors}) {
+        my @errors = @{$result->{errors}};
+
+        if (@errors) {
+            DEBUG("ERRORS: @errors");
+            my $message = join(' | ', map { join(', ', @$_) } @errors);
+            croak $message;
+        }
     }
 
     if (defined $callback && ref $callback eq 'CODE') {
@@ -301,6 +305,8 @@ sub login {
 
     $self->{modhash} = $result->{data}{modhash};
     $self->{cookie}  = $result->{data}{cookie};
+
+    return 1;
 }
 
 sub me {
@@ -410,7 +416,7 @@ sub submit_link {
         sr       => $subreddit,
         kind     => SUBMIT_LINK,
     });
-    
+
     return $result->{data}{name};
 }
 
@@ -431,7 +437,7 @@ sub submit_text {
         sr       => $subreddit,
         kind     => SUBMIT_SELF,
     });
-    
+
     return $result->{data}{name};
 }
 
@@ -462,7 +468,7 @@ sub submit_comment {
         thing_id => $parent_id,
         text     => $comment,
     });
-    
+
     return $result->{data}{things}[0]{data}{id};
 }
 
