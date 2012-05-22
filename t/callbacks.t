@@ -2,28 +2,13 @@ use strict;
 use warnings;
 use Carp;
 use Reddit::Client;
-use Test::More tests => 15;
-
-{ ## callback_login
-    my $reddit = Reddit::Client->new();
-    eval { $reddit->callback_login({ errors => [], data => { modhash => '...', cookie => '...' } }) };
-    ok(!$@, 'callback_login');
-    ok($reddit->{modhash}, 'callback_login');
-    ok($reddit->{cookie},  'callback_login');
-}
-
-{ ## callback_me
-    my $reddit = Reddit::Client->new();
-    my $me = eval { $reddit->callback_me({ data => {} }) };
-    ok(!$@, 'callback_me');
-    ok($me->isa('Reddit::Client::Account'), 'callback_me');
-}
+use Test::More tests => 10;
 
 { ## callback_info
     my $reddit = Reddit::Client->new();
     my $result = {};
     $result->{data} = {};
-    $result->{data}{children} = [ { data => { display_name => 'test' } }];
+    $result->{data}{children} = [{ data => { display_name => 'test' } }];
     my $subreddits = eval { $reddit->callback_list_subreddits($result) };
     ok(!$@, 'callback_list_subreddits');
     ok($subreddits->{test}->isa('Reddit::Client::SubReddit'), 'callback_list_subreddits');

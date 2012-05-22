@@ -92,7 +92,7 @@ sub DEBUG {
 	    my $ts  = strftime "%a %b %e %H:%M:%S %Y", localtime;
 	    my $msg = sprintf $format, @args;
 	    chomp $msg;
-	    warn sprintf("[%s] [ %s ]\n", $ts, $msg);
+	    printf STDERR "[%s] [ %s ]\n", $ts, $msg;
     }
 }
 
@@ -293,17 +293,12 @@ sub login {
 
     DEBUG('Log in user %s', $usr);
 
-    $self->api_json_request(
+    my $result = $self->api_json_request(
         api      => API_LOGIN,
         args     => [$usr],
         data     => { user => $usr, passwd => $pwd },
-        callback => sub { $self->callback_login(@_) },
     );
-}
 
-sub callback_login {
-    my ($self, $result) = @_;
-    DEBUG('Log in successful');
     $self->{modhash} = $result->{data}{modhash};
     $self->{cookie}  = $result->{data}{cookie};
 }
@@ -312,11 +307,7 @@ sub me {
     my $self = shift;
     DEBUG('Request user account info');
     $self->require_login;
-    return $self->api_json_request(api => API_ME, callback => sub { $self->callback_login(@_) });
-}
-
-sub callback_me {
-    my ($self, $result) = @_;
+    my $result = $self->api_json_request(api => API_ME);
     return Reddit::Client::Account->new($self, $result->{data});
 }
 
@@ -663,19 +654,9 @@ stores the session file path for future use.
 Attempts to log the user in. Throws an error on failure.
 
 
-=item callback_login
-
-Internal method; helper for C<login>.
-
-
 =item me
 
 Returns a Reddit::Client::Account object.
-
-
-=item callback_me
-
-Internal method; helper for C<me>.
 
 
 =item list_subreddits($type)
