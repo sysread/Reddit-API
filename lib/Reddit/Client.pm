@@ -1,6 +1,6 @@
 package Reddit::Client;
 
-our $VERSION = '0.01'; ## no critic
+our $VERSION = '0.02'; ## no critic
 
 use Carp;
 use Data::Dumper   qw//;

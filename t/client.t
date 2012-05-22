@@ -4,18 +4,18 @@ use Carp;
 use JSON qw//;
 use Reddit::Client;
 use Test::MockModule;
-use Test::More tests => 35;
+use Test::More tests => 44;
 
 sub json_request_mock {
     my $data = shift || {};
-    my $r    = HTTP::Response->new(200);
+    my $r    = HTTP::Response->new(200, 'OK');
     $r->content(JSON::to_json({ json => { data => $data, errors => [] }}));
     return sub { $r };
 }
 
 sub json_error_mock {
     my $data = shift || [];
-    my $r    = HTTP::Response->new(200);
+    my $r    = HTTP::Response->new(200, 'OK');
     $r->content(JSON::to_json({ json => { errors => $data } }));
     return sub { $r };
 }
@@ -76,10 +76,6 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
     ok($result->{test}->isa('Reddit::Client::SubReddit'), 'list_subreddits');
 
     $lwp->unmock_all;
-}
-
-{ ## info -- TODO
-    ok(1, 'info');
 }
 
 { ## find_subreddits
@@ -144,7 +140,19 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 }
 
 { ## get_comments
-    ok(1, 'get_comments');
+    my $reddit = Reddit::Client->new();
+    $lwp->mock('request', sub {
+        my $r = HTTP::Response->new(200, 'OK');
+        $r->content(JSON::to_json([ undef, { data => { children => [ { data => { title => 'test' }}]}}]));
+        return $r;
+    });
+
+    eval { $reddit->get_comments };
+    ok($@ =~ /^Expected "permalink"/, 'get_comments');
+
+    my $comments = $reddit->get_comments(permalink => 'foo');
+    ok($comments->[0]->isa('Reddit::Client::Comment'), 'get_comments');
+    ok($comments->[0]{title} eq 'test', 'get_comments');
 }
 
 { ## submit_comment
@@ -152,35 +160,52 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
     $reddit->{modhash} = 'test';
     $reddit->{cookie}  = 'test';
     $lwp->mock('request', json_request_mock({ things => [ { data => { id => 'foo' }}]}));
-    
+
     eval { $reddit->submit_comment };
     ok($@ =~ /^Expected "parent_id"/, 'submit_comment');
-    
+
     eval { $reddit->submit_comment(parent_id => 'test') };
     ok($@ =~ /^Expected "text"/, 'submit_comment');
-    
+
     ok($reddit->submit_comment(parent_id => 'test', text => 'test') eq 'foo', 'submit_comment');
     $lwp->unmock_all;
 }
 
-{ ## vote
-    ok(1, 'vote');
-}
+#### Minimal testing for API functions that do little to no data processing
 
-{ ## save
-    ok(1, 'save');
-}
+{
+    my $reddit = Reddit::Client->new();
+    $lwp->mock('request', json_request_mock({}));
 
-{ ## unsave
-    ok(1, 'unsave');
-}
+    ## info
+    eval { $reddit->info };
+    ok($@ =~ /^Expected \$id/, 'info');
 
-{ ## hide
-    ok(1, 'hide');
-}
+    ## vote save unsave hide unhide
+    foreach my $method (qw/save unsave hide unhide/) {
+        eval { $reddit->$method(name => 'test') };
+        ok($@ =~ /^You must be logged in to perform this action/, $method);
+    }
+    
+    eval { $reddit->vote('test', 0) };
+    ok($@ =~ /^You must be logged in to perform this action/, 'vote');
 
-{ ## unhide
-    ok(1, 'unhide');
+    $reddit->{modhash} = 'test';
+    $reddit->{cookie}  = 'test';
+
+    foreach my $method (qw/save unsave hide unhide/) {
+        eval { $reddit->$method() };
+        ok($@ =~ /^Expected \$name/, $method);
+    }
+
+    eval { $reddit->vote('test') };
+    ok($@ =~ /^Expected \$direction/, 'vote');
+
+    eval { $reddit->vote('test', 'fail') };
+    ok($@ =~ /^Invalid vote direction/, 'vote');
+
+    eval { $reddit->vote('test', 3) };
+    ok($@ =~ /^Invalid vote direction/, 'vote');
 }
 
 1;
