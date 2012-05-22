@@ -4,8 +4,8 @@ Reddit::Client provides a perl wrapper for the Reddit API, allowing
 basic services such as login, retrieval of stories and comments,
 voting, and publishing new links and comments.
 
-Please regard this software is beta and incomplete. However,
-basic functionality is complete:
+Please regard this software is beta. However, the following API calls
+should function acceptably well:
 
   * Logging in
   * Listing reddits
@@ -17,11 +17,6 @@ basic functionality is complete:
   * Save/unsave
   * Hide/unhide
   
-Still to do:
-  * Better test coverage
-  * More complete logging for debugging
-  * User-configurable error handler function
-
 INSTALLATION
 
 To install this module, run the following commands:
