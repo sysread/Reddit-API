@@ -264,14 +264,14 @@ sub load_session {
         open(my $fh, '<', $file_path) or croak $!;
         my $data = do { local $/; <$fh> };
         close $fh;
-        
+
         if ($data) {
             my $session = JSON::from_json($data);
             $self->{modhash} = $session->{modhash};
             $self->{cookie}  = $session->{cookie};
-    
+
             DEBUG('Session loaded successfully');
-    
+
             return 1;
         } else {
             return 0;
@@ -321,17 +321,7 @@ sub list_subreddits {
 	    || $type eq SUBREDDITS_MINE
 	    || $type eq SUBREDDITS_CONTRIB;
 
-    if ($self->is_logged_in) {
-        $self->api_json_request(
-            api      => API_SUBREDDITS,
-            args     => [$type],
-            callback => sub { $self->callback_list_subreddits(@_) },
-        );
-    }
-}
-
-sub callback_list_subreddits {
-    my ($self, $result) = @_;
+    my $result = $self->api_json_request(api => API_SUBREDDITS, args => [$type]);
     return {
         map { $_->{data}{display_name} => Reddit::Client::SubReddit->new($self, $_->{data}) }
             @{$result->{data}{children}}
@@ -359,12 +349,13 @@ sub info {
 
 sub find_subreddits {
     my ($self, $query) = @_;
+    defined $query || croak 'Expected $query';
     DEBUG('Search subreddits: %s', $query);
-    return $self->api_json_request(
-        api      => API_SEARCH,
-        data     => { q => $query },
-        callback => sub { $self->callback_list_subreddits(@_) },
-    );
+    my $result = $self->api_json_request(api => API_SEARCH, data => { q => $query });
+    return {
+        map { $_->{data}{display_name} => Reddit::Client::SubReddit->new($self, $_->{data}) }
+            @{$result->{data}{children}}
+    };
 }
 
 sub fetch_links {
@@ -385,16 +376,12 @@ sub fetch_links {
     }
 
     $subreddit = subreddit($subreddit);
-    return $self->api_json_request(
+    my $result = $self->api_json_request(
         api      => ($subreddit ? API_LINKS_OTHER : API_LINKS_FRONT),
         args     => [$view],
         data     => $query,
-        callback => sub { $self->callback_fetch_links(@_) },
     );
-}
 
-sub callback_fetch_links {
-    my ($self, $result) = @_;
     return {
         before => $result->{data}{before},
         after  => $result->{data}{after},
@@ -417,13 +404,14 @@ sub submit_link {
     $subreddit = subreddit($subreddit);
     $self->require_login;
 
-    return $self->api_json_request(api => API_SUBMIT, data => {
+    my $result = $self->api_json_request(api => API_SUBMIT, data => {
         title    => $title,
         url      => $url,
         sr       => $subreddit,
         kind     => SUBMIT_LINK,
-        callback => sub { $self->callback_submit(@_) },
     });
+    
+    return $result->{data}{name};
 }
 
 sub submit_text {
@@ -437,17 +425,13 @@ sub submit_text {
     $subreddit = subreddit($subreddit);
     $self->require_login;
 
-    return $self->api_json_request(api => API_SUBMIT, data => {
+    my $result = $self->api_json_request(api => API_SUBMIT, data => {
         title    => $title,
         text     => $text,
         sr       => $subreddit,
         kind     => SUBMIT_SELF,
-        callback => sub { $self->callback_submit(@_) },
     });
-}
-
-sub callback_submit {
-    my ($self, $result) = @_;
+    
     return $result->{data}{name};
 }
 
@@ -474,15 +458,11 @@ sub submit_comment {
     DEBUG('Submit comment under %s', $parent_id);
 
     $self->require_login;
-    return $self->api_json_request(api => API_COMMENT, data => {
+    my $result = $self->api_json_request(api => API_COMMENT, data => {
         thing_id => $parent_id,
         text     => $comment,
-        callback => sub { $self->callback_submit_comment(@_) },
     });
-}
-
-sub callback_submit_comment {
-    my ($self, $result) = @_;
+    
     return $result->{data}{things}[0]{data}{id};
 }
 
@@ -665,11 +645,6 @@ Returns a list of Reddit::Client::SubReddit objects for C<$type>, where C<$type>
 is a C<SUBREDDITS_*> constant.
 
 
-=item callback_list_subreddits
-
-Internal method; helper for C<list_subreddits>.
-
-
 =item my_subreddits
 
 Syntactic sugar for C<list_subreddits(SUBREDDITS_MINE)>. Throws an error if
@@ -725,11 +700,6 @@ slicing the feed up, just as the reddit urls themselves do. Data is returned
 as a hash with three keys, I<before>, I<after>, and I<items>.
 
 
-=item callback_fetch_links
-
-Internal method; helper for C<fetch_links>.
-
-
 =item submit_link(subreddit => ..., title => ..., url => ...)
 
 Submits a link to a reddit. Returns the id of the new link.
@@ -738,11 +708,6 @@ Submits a link to a reddit. Returns the id of the new link.
 =item submit_text(subreddit => ..., title => ..., text => ...)
 
 Submits a self-post to a reddit. Returns the id of the new post.
-
-
-=item callback_submit
-
-Internal method; helper for C<submit_link> and C<submit_text>.
 
 
 =item get_comments($permalink)
@@ -762,11 +727,6 @@ parameter.
 =item submit_comment(parent_id => ..., text => ...)
 
 Submits a new comment underneath C<parent_id>.
-
-
-=item callback_submit_comment
-
-Internal method; helper for C<submit_comment>.
 
 
 =item vote(item_id => ..., direction => ...)
