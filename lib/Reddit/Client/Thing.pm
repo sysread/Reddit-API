@@ -1,4 +1,4 @@
-package Reddit::API::Thing;
+package Reddit::Client::Thing;
 
 use Carp;
 use List::Util qw/first/;
@@ -48,7 +48,7 @@ __END__
 
 =head1 NAME
 
-Reddit::API::Thing
+Reddit::Client::Thing
 
 =head1 DESCRIPTION
 
@@ -56,7 +56,7 @@ A "Thing" is the base class of all Reddit objects. Do not blame the author
 for this. This is specified by the API documentation. The author just
 perpetuated it.
 
-Generally, consumers of the Reddit::API module do not instantiate these
+Generally, consumers of the Reddit::Client module do not instantiate these
 objects directly. Things offer a bit of syntactic sugar around the data
 returned by reddit's servers, such as the ability to comment directly on
 a Link object.
@@ -67,7 +67,7 @@ a Link object.
 
 =item new($session, $data)
 
-Creates a new Thing. C<$session> must be an instance of Reddit::API.
+Creates a new Thing. C<$session> must be an instance of Reddit::Client.
 C<$data>, when present, must be a hash reference of key/value pairs.
 
 =back

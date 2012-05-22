@@ -1,4 +1,4 @@
-Revision history for Reddit-API
+Revision history for Reddit::Client
 
 0.02    2012-05-??
         * Request and data processing are now separated where possible to allow
@@ -6,6 +6,7 @@ Revision history for Reddit-API
         * Added unit tests for routines that do not directly connect to Reddit's
           servers
         * Miscellaneous bugfixes
+        * Renamed to Reddit::Client
          
 0.01    2012-05-09
         * Initial release

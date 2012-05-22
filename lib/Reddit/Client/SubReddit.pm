@@ -1,11 +1,11 @@
-package Reddit::API::SubReddit;
+package Reddit::Client::SubReddit;
 
 use Carp;
 
-require Reddit::API;
-require Reddit::API::Thing;
+require Reddit::Client;
+require Reddit::Client::Thing;
 
-use base   qw/Reddit::API::Thing/;
+use base   qw/Reddit::Client::Thing/;
 use fields qw/over18 header_img created_utc header_title header_size
               description display_name created url title subscribers/;
 
@@ -31,7 +31,7 @@ __END__
 
 =head1 NAME
 
-Reddit::API::SubReddit
+Reddit::Client::SubReddit
 
 =head1 DESCRIPTION
 
@@ -43,15 +43,15 @@ Provides convenience methods for interacting with SubReddits.
 
 =item links(...)
 
-Wraps C<Reddit::API::fetch_links>, providing the subreddit parameter implicitly.
+Wraps C<Reddit::Client::fetch_links>, providing the subreddit parameter implicitly.
 
 =item submit_link($title, $url)
 
-Wraps C<Reddit::API::submit_link>, providing the subreddit parameter implicitly.
+Wraps C<Reddit::Client::submit_link>, providing the subreddit parameter implicitly.
 
 =item submit_text($title, $text)
 
-Wraps C<Reddit::API::submit_text>, providing the subreddit parameter implicitly.
+Wraps C<Reddit::Client::submit_text>, providing the subreddit parameter implicitly.
 
 =back
 

@@ -1,13 +1,15 @@
 Changes
-lib/Reddit/API.pm
-lib/Reddit/API/Account.pm
-lib/Reddit/API/Comment.pm
-lib/Reddit/API/Link.pm
-lib/Reddit/API/SubReddit.pm
-lib/Reddit/API/Thing.pm
-lib/Reddit/API/VotableThing.pm
+lib/Reddit/Client.pm
+lib/Reddit/Client/Account.pm
+lib/Reddit/Client/Comment.pm
+lib/Reddit/Client/Link.pm
+lib/Reddit/Client/SubReddit.pm
+lib/Reddit/Client/Thing.pm
+lib/Reddit/Client/VotableThing.pm
+ignore.txt
 Makefile.PL
 MANIFEST			This list of files
+MANIFEST.SKIP
 README
 t/00-load.t
 t/manifest.t

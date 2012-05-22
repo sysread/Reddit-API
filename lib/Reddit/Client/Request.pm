@@ -1,9 +1,10 @@
-package Reddit::API::Request;
+package Reddit::Client::Request;
 
 use Carp;
 use LWP::UserAgent qw//;
 use HTTP::Request  qw//;
 use URI::Encode    qw/uri_encode/;
+require Reddit::Client;
 
 use fields (
     'user_agent',
@@ -24,7 +25,7 @@ sub new {
     $self->{post_data}  = $param{post_data};
     $self->{cookie}     = $param{cookie};
     $self->{modhash}    = $param{modhash};
-    
+
     if (defined $self->{query}) {
         ref $self->{query} eq 'HASH' || croak 'Expected HASH ref for "query"';
         $self->{url} = sprintf('%s?%s', $self->{url}, build_query($self->{query}))
@@ -45,10 +46,10 @@ sub build_query {
     join '&', map {uri_encode($_) . '=' . uri_encode($param->{$_})} sort keys %$param;
 }
 
-sub send {
+sub build_request {
     my $self    = shift;
     my $request = HTTP::Request->new();
-    
+
     $request->uri($self->{url});
     $request->header('Cookie', sprintf('reddit_session=%s', $self->{cookie}))
         if $self->{cookie};
@@ -57,15 +58,22 @@ sub send {
         my $post_data = $self->{post_data} || {};
         $post_data->{modhash} = $self->{modhash} if $self->{modhash};
         $post_data->{uh}      = $self->{modhash} if $self->{modhash};
-        
+
         $request->method('POST');
         $request->content_type('application/x-www-form-urlencoded');
         $request->content(build_query($post_data));
     } else {
         $request->method('GET');
     }
+    
+    return $request;
+}
 
-    Reddit::API::DEBUG('%4s request to %s', $self->{method}, $self->{url});
+sub send {
+    my $self    = shift;
+    my $request = $self->build_request;
+
+    Reddit::Client::DEBUG('%4s request to %s', $self->{method}, $self->{url});
 
     my $ua  = LWP::UserAgent->new(agent => $self->{user_agent}, env_proxy => 1);
     my $res = $ua->request($request);
@@ -73,7 +81,7 @@ sub send {
     if ($res->is_success) {
         return $res->content;
     } else {
-        croak sprintf('Request error: %s', $res->status_line);
+        croak sprintf('Request error: HTTP %s', $res->status_line);
     }
 }
 
@@ -85,12 +93,12 @@ __END__
 
 =head1 NAME
 
-Reddit::API::Request
+Reddit::Client::Request
 
 =head1 DESCRIPTION
 
-HTTP request driver for Reddit::API. Uses LWP to perform GET and POST requests
-to the reddit.com servers. This module is used internally by the Reddit::API
+HTTP request driver for Reddit::Client. Uses LWP to perform GET and POST requests
+to the reddit.com servers. This module is used internally by the Reddit::Client
 and is not designed for external use.
 
 =head1 SUBROUTINES/METHODS
@@ -98,7 +106,7 @@ and is not designed for external use.
 =over
 
 =item new(%params)
- 
+
 Creates a new Reddit::Request::API instance. Parameters:
 
     user_agent    User agent string
@@ -113,6 +121,11 @@ Creates a new Reddit::Request::API instance. Parameters:
 
 Builds a URI-escaped query string from a hash of query parameters. This is *not*
 a method of the class, but a package routine.
+
+
+=item build_request
+
+Builds an HTTP::Request object for LWP::UserAgent.
 
 
 =item send

@@ -1,10 +1,10 @@
-package Reddit::API::Account;
+package Reddit::Client::Account;
 
 use Carp;
 
-require Reddit::API::Thing;
+require Reddit::Client::Thing;
 
-use base   qw/Reddit::API::Thing/;
+use base   qw/Reddit::Client::Thing/;
 use fields qw/has_mail created modhash created_utc link_karma
               comment_karma is_gold is_mod has_mod_mail/;
 
@@ -16,7 +16,7 @@ __END__
 
 =head1 NAME
 
-Reddit::API::Account
+Reddit::Client::Account
 
 =head1 DESCRIPTION
 

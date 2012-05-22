@@ -1,4 +1,4 @@
-package Reddit::API;
+package Reddit::Client;
 
 our $VERSION = '0.01'; ## no critic
 
@@ -11,11 +11,11 @@ use File::Spec     qw//;
 use Digest::MD5    qw/md5_hex/;
 use POSIX          qw/strftime/;
 
-require Reddit::API::Account;
-require Reddit::API::Comment;
-require Reddit::API::Link;
-require Reddit::API::SubReddit;
-require Reddit::API::Request;
+require Reddit::Client::Account;
+require Reddit::Client::Comment;
+require Reddit::Client::Link;
+require Reddit::Client::SubReddit;
+require Reddit::Client::Request;
 
 #===============================================================================
 # Constants
@@ -64,7 +64,7 @@ use constant SUBREDDITS_MOD     => 'moderator';
 
 our $DEBUG           = 0;
 our $BASE_URL        = 'http://www.reddit.com';
-our $UA              = sprintf 'Reddit::API/%f', $VERSION;
+our $UA              = sprintf 'Reddit::Client/%f', $VERSION;
 
 our @API;
 $API[API_ME         ] = ['GET',  '/api/me'        ];
@@ -144,7 +144,7 @@ sub request {
     # Trim leading slashes off of the path
     $path =~ s/^\/+//;
 
-    my $request = Reddit::API::Request->new(
+    my $request = Reddit::Client::Request->new(
         user_agent => $UA,
         url        => sprintf('%s/%s', $BASE_URL, $path),
         method     => $method,
@@ -317,7 +317,7 @@ sub me {
 
 sub callback_me {
     my ($self, $result) = @_;
-    return Reddit::API::Account->new($self, $result->{data});
+    return Reddit::Client::Account->new($self, $result->{data});
 }
 
 sub list_subreddits {
@@ -342,7 +342,7 @@ sub list_subreddits {
 sub callback_list_subreddits {
     my ($self, $result) = @_;
     return {
-        map { $_->{data}{display_name} => Reddit::API::SubReddit->new($self, $_->{data}) }
+        map { $_->{data}{display_name} => Reddit::Client::SubReddit->new($self, $_->{data}) }
             @{$result->{data}{children}}
     };
 }
@@ -407,7 +407,7 @@ sub callback_fetch_links {
     return {
         before => $result->{data}{before},
         after  => $result->{data}{after},
-        items  => [ map {Reddit::API::Link->new($self, $_->{data})} @{$result->{data}{children}} ],
+        items  => [ map {Reddit::Client::Link->new($self, $_->{data})} @{$result->{data}{children}} ],
     };
 }
 
@@ -472,7 +472,7 @@ sub get_comments {
 
     my $result   = $self->json_request('GET', $permalink);
     my $comments = $result->[1]{data}{children};
-    return [ map { Reddit::API::Comment->new($self, $_->{data}) } @$comments ];
+    return [ map { Reddit::Client::Comment->new($self, $_->{data}) } @$comments ];
 }
 
 sub submit_comment {
@@ -553,7 +553,7 @@ __END__
 
 =head1 NAME
 
-Reddit::API - A perl wrapper for Reddit
+Reddit::Client - A perl wrapper for Reddit
 
 =head1 VERSION
 
@@ -561,10 +561,10 @@ Version 0.01
 
 =head1 SYNOPSIS
 
-    use Reddit::API;
+    use Reddit::Client;
 
     my $session_file = '~/.reddit';
-    my $reddit       = Reddit::API->new(session_file => $session_file);
+    my $reddit       = Reddit::Client->new(session_file => $session_file);
 
     unless ($reddit->is_logged_in) {
         $reddit->login('someone', 'secret');
@@ -584,7 +584,7 @@ Version 0.01
 
 =head1 DESCRIPTION
 
-Reddit::API provides methods and simple object wrappers for objects exposed
+Reddit::Client provides methods and simple object wrappers for objects exposed
 by the Reddit API. This module handles HTTP communication, basic session
 management (e.g. storing an active login session), and communication with
 Reddit's external API.
@@ -618,7 +618,7 @@ For more information about the Reddit API, see L<https://github.com/reddit/reddi
 
 =item $UA
 
-This is the user agent string, and defaults to C<Reddit::API/$VERSION>.
+This is the user agent string, and defaults to C<Reddit::Client/$VERSION>.
 
 
 =item $DEBUG
@@ -648,7 +648,7 @@ validate the current session against the server.
 =item save_session($path)
 
 Saves the current session to C<$path>. Throws an error if the user is not logged
-in. C<$path> is only required if the Reddit::API instance was created without
+in. C<$path> is only required if the Reddit::Client instance was created without
 the C<session_file> parameter.
 
 
@@ -670,7 +670,7 @@ Internal method; helper for C<login>.
 
 =item me
 
-Returns a Reddit::API::Account object.
+Returns a Reddit::Client::Account object.
 
 
 =item callback_me
@@ -680,7 +680,7 @@ Internal method; helper for C<me>.
 
 =item list_subreddits($type)
 
-Returns a list of Reddit::API::SubReddit objects for C<$type>, where C<$type>
+Returns a list of Reddit::Client::SubReddit objects for C<$type>, where C<$type>
 is a C<SUBREDDITS_*> constant.
 
 
@@ -766,7 +766,7 @@ Internal method; helper for C<submit_link> and C<submit_text>.
 
 =item get_comments($permalink)
 
-Returns a list ref of Reddit::API::Comment objects underneath the
+Returns a list ref of Reddit::Client::Comment objects underneath the
 the specified URL C<$permalink>. Unfortunately, this is the only
 method available via the API. Comments may be more easily accessed
 via the Link object, which implicitly provides the C<$permalink>
@@ -824,7 +824,7 @@ unhide the item in question.
 
 =item DEBUG
 
-When C<$Reddit::API::DEBUG> is true, acts as syntactic sugar for
+When C<$Reddit::Client::DEBUG> is true, acts as syntactic sugar for
 warn(sprintf(@_)). Used to provided logging.
 
 

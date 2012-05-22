@@ -2,16 +2,16 @@ use strict;
 use warnings;
 use Carp;
 use JSON qw//;
-use Reddit::API;
-use Reddit::API::Thing;
-use Reddit::API::VotableThing;
-use Reddit::API::Comment;
+use Reddit::Client;
+use Reddit::Client::Thing;
+use Reddit::Client::VotableThing;
+use Reddit::Client::Comment;
 use Test::More tests => 13;
 
-my $reddit = Reddit::API->new();
+my $reddit = Reddit::Client->new();
 
 ## set_bool
-my $thing = Reddit::API::Thing->new();
+my $thing = Reddit::Client::Thing->new();
 
 $thing->set_bool('name', JSON::true);
 ok($thing->{name} == 1, 'set_bool');
@@ -20,7 +20,7 @@ $thing->set_bool('name', JSON::false);
 ok($thing->{name} == 0, 'set_bool');
 
 ## load_from_source_data
-my $account = Reddit::API::Account->new();
+my $account = Reddit::Client::Account->new();
 my $warns = '';
 open my $warns_fh, '>', \$warns;
 
@@ -35,10 +35,10 @@ ok($account->{name} eq 'foo',   'load_from_source_data');
 ok($account->{id}   eq 'bar',   'load_from_source_data');
 ok($account->{has_mail} == 0,   'load_from_source_data');
 ok(!exists $account->{invalid}, 'load_from_source_data');
-ok($warns =~ "^Field invalid is missing from package Reddit::API::Account\n", 'load_from_source_data');
+ok($warns =~ "^Field invalid is missing from package Reddit::Client::Account\n", 'load_from_source_data');
 
 ## set_likes
-my $votable = Reddit::API::VotableThing->new();
+my $votable = Reddit::Client::VotableThing->new();
 
 $votable->load_from_source_data({ likes => JSON::null });
 ok(!defined $votable->{likes}, 'set_likes');
@@ -50,7 +50,7 @@ $votable->load_from_source_data({ likes => JSON::false });
 ok($votable->{likes} == 0, 'set_likes');
 
 ## set_replies
-my $comment = Reddit::API::Comment->new($reddit);
+my $comment = Reddit::Client::Comment->new($reddit);
 $comment->set_replies({
     data => {
         children => [
@@ -62,7 +62,7 @@ $comment->set_replies({
 });
 
 ok(scalar(@{$comment->{replies}}) == 3, 'set_replies');
-ok($comment->{replies}[0]->isa('Reddit::API::Comment'), 'set_replies');
+ok($comment->{replies}[0]->isa('Reddit::Client::Comment'), 'set_replies');
 
 $comment->set_replies();
 ok(scalar(@{$comment->{replies}}) == 0, 'set_replies');

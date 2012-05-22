@@ -1,10 +1,10 @@
-package Reddit::API::Comment;
+package Reddit::Client::Comment;
 
 use Carp;
 
-require Reddit::API::VotableThing;
+require Reddit::Client::VotableThing;
 
-use base   qw/Reddit::API::VotableThing/;
+use base   qw/Reddit::Client::VotableThing/;
 use fields qw/link_flair_text media url link_flair_css_class num_reports created_utc
 			  banned_by subreddit title author_flair_text is_self author media_embed
 			  permalink author_flair_css_class selftext domain num_comments clicked
@@ -14,7 +14,7 @@ use fields qw/link_flair_text media url link_flair_css_class num_reports created
 sub set_replies {
     my ($self, $value) = @_;
     if (ref $value && exists $value->{data}{children}) {
-	    $self->{replies} = [ map { Reddit::API::Comment->new($self->{_session}, $_->{data}) } @{$value->{data}{children}} ];
+	    $self->{replies} = [ map { Reddit::Client::Comment->new($self->{_session}, $_->{data}) } @{$value->{data}{children}} ];
     } else {
         $self->{replies} = [];
     }
@@ -37,7 +37,7 @@ __END__
 
 =head1 NAME
 
-Reddit::API::Comment
+Reddit::Client::Comment
 
 =head1 DESCRIPTION
 
@@ -53,7 +53,7 @@ Returns a list ref of replies underneath this comment.
 
 =item reply(...)
 
-Syntactic sugar for C<Reddit::API::submit_comment()>.
+Syntactic sugar for C<Reddit::Client::submit_comment()>.
 
 =back
 

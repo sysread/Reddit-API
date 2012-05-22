@@ -1,6 +1,6 @@
-Reddit-API
+Reddit::Client
 
-Reddit::API provides a perl wrapper for the Reddit API, allowing
+Reddit::Client provides a perl wrapper for the Reddit API, allowing
 basic services such as login, retrieval of stories and comments,
 voting, and publishing new links and comments.
 
@@ -36,11 +36,15 @@ SUPPORT AND DOCUMENTATION
 After installing, you can find documentation for this module with the
 perldoc command.
 
-    perldoc Reddit::API
+    perldoc Reddit::Client
 
 More information about this module may be found on github:
 
     https://github.com/jsober/Reddit-API
+
+This module is also available on CPAN:
+
+    http://search.cpan.org/~jeffober/Reddit-API/lib/Reddit/API.pm
 
 LICENSE AND COPYRIGHT
 

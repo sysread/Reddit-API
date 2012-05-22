@@ -3,18 +3,18 @@ use warnings;
 use Carp;
 use JSON       qw//;
 use File::Temp qw/tempfile/;
-use Reddit::API;
+use Reddit::Client;
 use Test::More tests => 13;
 
 my ($fh, $filename) = tempfile();
-my $reddit = Reddit::API->new(session_file => $filename);
+my $reddit = Reddit::Client->new(session_file => $filename);
 
 
-ok(Reddit::API::subreddit('/r/foo')  eq 'foo', 'subreddit');
-ok(Reddit::API::subreddit('/foo')    eq 'foo', 'subreddit');
-ok(Reddit::API::subreddit('/r/foo/') eq 'foo', 'subreddit');
-ok(Reddit::API::subreddit('/')       eq '',    'subreddit');
-ok(!defined Reddit::API::subreddit('foo/bar'), 'subreddit');
+ok(Reddit::Client::subreddit('/r/foo')  eq 'foo', 'subreddit');
+ok(Reddit::Client::subreddit('/foo')    eq 'foo', 'subreddit');
+ok(Reddit::Client::subreddit('/r/foo/') eq 'foo', 'subreddit');
+ok(Reddit::Client::subreddit('/')       eq '',    'subreddit');
+ok(!defined Reddit::Client::subreddit('foo/bar'), 'subreddit');
 
 
 eval{ $reddit->require_login };
