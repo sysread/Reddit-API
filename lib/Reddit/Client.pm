@@ -3,7 +3,7 @@ package Reddit::Client;
 our $VERSION = '0.02'; ## no critic
 
 use Carp;
-use Data::Dumper   qw//;
+use Data::Dumper   qw/Dumper/;
 use JSON           qw//;
 use LWP::UserAgent qw//;
 use HTTP::Request  qw//;
@@ -50,6 +50,7 @@ use constant API_UNHIDE         => 10;
 use constant API_SUBREDDITS     => 11;
 use constant API_LINKS_FRONT    => 12;
 use constant API_LINKS_OTHER    => 13;
+use constant API_DEL            => 14;
 
 use constant SUBREDDITS_HOME    => '';
 use constant SUBREDDITS_MINE    => 'mine';
@@ -81,6 +82,7 @@ $API[API_UNHIDE     ] = ['POST', '/api/unhide'    ];
 $API[API_SUBREDDITS ] = ['GET',  '/reddits/%s'    ];
 $API[API_LINKS_OTHER] = ['GET',  '/%s'            ];
 $API[API_LINKS_FRONT] = ['GET',  '/r/%s'          ];
+$API[API_DEL        ] = ['POST', '/api/del'       ];
 
 #===============================================================================
 # Package routines
@@ -174,7 +176,10 @@ sub json_request {
     if (ref $json eq 'HASH' && $json->{json}) {
         my $result = $json->{json};
         if (@{$result->{errors}}) {
-            my @errors = map {$_->[1]} @{$result->{errors}};
+            DEBUG('API Errors: %s', Dumper($result->{errors}));
+            my @errors = map {
+                sprintf '[%s] %s', $_->[0], $_->[1]
+            } @{$result->{errors}};
             croak sprintf("Error(s): %s", join('|', @errors));
         } else {
             return $result;
@@ -396,6 +401,22 @@ sub fetch_links {
 }
 
 #===============================================================================
+# Deleting stories or comments
+#===============================================================================
+
+# TODO unit test
+sub delete_item {
+    my ($self, %param) = @_;
+    my $name = $param{name} || croak 'Expected "name"';
+    $self->require_login;
+    
+    DEBUG('Delete post/comment %s', $name);
+    
+    my $result = $self->api_json_request(api => API_DEL, data => { id => $name });
+    return 1;
+}
+
+#===============================================================================
 # Submitting links
 #===============================================================================
 
@@ -404,11 +425,11 @@ sub submit_link {
     my $subreddit = $param{subreddit} || '';
     my $title     = $param{title}     || croak 'Expected "title"';
     my $url       = $param{url}       || croak 'Expected "url"';
+    $self->require_login;
 
     DEBUG('Submit link to %s: %s', $subreddit, $title, $url);
 
     $subreddit = subreddit($subreddit);
-    $self->require_login;
 
     my $result = $self->api_json_request(api => API_SUBMIT, data => {
         title    => $title,
@@ -425,11 +446,11 @@ sub submit_text {
     my $subreddit = $param{subreddit} || '';
     my $title     = $param{title}     || croak 'Expected "title"';
     my $text      = $param{text}      || croak 'Expected "text"';
+    $self->require_login;
 
     DEBUG('Submit text to %s: %s', $subreddit, $title);
 
     $subreddit = subreddit($subreddit);
-    $self->require_login;
 
     my $result = $self->api_json_request(api => API_SUBMIT, data => {
         title    => $title,
@@ -704,6 +725,11 @@ C<VIEW_NEW> or C<VIEW_HOT>). C<limit> may be used to limit the number of
 objects returned, and C<before> and C<after> denote the placeholders for
 slicing the feed up, just as the reddit urls themselves do. Data is returned
 as a hash with three keys, I<before>, I<after>, and I<items>.
+
+
+=item delete_item(name => ...)
+
+Deletes a post or comment. The object's full name is required.
 
 
 =item submit_link(subreddit => ..., title => ..., url => ...)

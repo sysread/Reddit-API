@@ -186,7 +186,7 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
         eval { $reddit->$method(name => 'test') };
         ok($@ =~ /^You must be logged in to perform this action/, $method);
     }
-    
+
     eval { $reddit->vote('test', 0) };
     ok($@ =~ /^You must be logged in to perform this action/, 'vote');
 
@@ -206,6 +206,8 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 
     eval { $reddit->vote('test', 3) };
     ok($@ =~ /^Invalid vote direction/, 'vote');
+
+    $lwp->unmock_all;
 }
 
 1;

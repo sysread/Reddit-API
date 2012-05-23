@@ -7,7 +7,8 @@ require Reddit::Client::Thing;
 
 use base   qw/Reddit::Client::Thing/;
 use fields qw/over18 header_img created_utc header_title header_size
-              description display_name created url title subscribers/;
+              description display_name created url title subscribers
+              public_description/;
 
 sub links {
     my ($self, %param) = @_;
