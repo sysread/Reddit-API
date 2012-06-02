@@ -37,9 +37,9 @@ my $reddit = Reddit::Client->new(session_file => $filename);
     my @lines = $capture->read;
 
     ok(@lines == 3, 'DEBUG');
-    ok($lines[0] =~ /^\[... ... \d\d \d\d:\d\d:\d\d \d\d\d\d\] \[ test 1 \]\n$/, 'DEBUG');
-    ok($lines[1] =~ /^\[... ... \d\d \d\d:\d\d:\d\d \d\d\d\d\] \[ test 2 \]\n$/, 'DEBUG');
-    ok($lines[2] =~ /^\[... ... \d\d \d\d:\d\d:\d\d \d\d\d\d\] \[ test 3 \]\n$/, 'DEBUG');
+    like($lines[0] ,qr/^\[... ...\s+\d{1,2} \d\d:\d\d:\d\d \d\d\d\d\] \[ test 1 \]\n$/, 'DEBUG');
+    like($lines[1] ,qr/^\[... ...\s+\d{1,2} \d\d:\d\d:\d\d \d\d\d\d\] \[ test 2 \]\n$/, 'DEBUG');
+    like($lines[2] ,qr/^\[... ...\s+\d{1,2} \d\d:\d\d:\d\d \d\d\d\d\] \[ test 3 \]\n$/, 'DEBUG');
 }
 
 
