@@ -15,12 +15,13 @@ WriteMakefile(
     clean               => { FILES => 'Reddit-Client-*' },
     
     PREREQ_PM           => {
-        'HTTP::Request'    => 0,
-        'JSON'             => 0,
-        'List::Util'       => 0,
-        'LWP::UserAgent'   => 0,
-        'Test::More'       => 0,
-        'Test::MockModule' => 0,
-        'URI::Encode'      => 0,
+        'HTTP::Request'       => 0,
+        'JSON'                => 0,
+        'List::Util'          => 0,
+        'LWP::UserAgent'      => 0,
+        'Test::More'          => 0,
+        'Test::MockModule'    => 0,
+        'URI::Encode'         => 0,
+        'IO::Capture::Stderr' => 0,
     },
 );
