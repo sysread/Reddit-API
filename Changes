@@ -1,6 +1,10 @@
 Revision history for Reddit::Client
 
-0.02    2012-05-??
+0.03    2012-05-31
+        * Fixed dependencies
+        * Fixed invalid date regexes in tests
+
+0.02    2012-05-31
         * Added unit tests
         * Miscellaneous bugfixes
         * Renamed to Reddit::Client
