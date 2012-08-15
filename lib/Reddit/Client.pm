@@ -81,7 +81,7 @@ $API[API_HIDE       ] = ['POST', '/api/hide'      ];
 $API[API_UNHIDE     ] = ['POST', '/api/unhide'    ];
 $API[API_SUBREDDITS ] = ['GET',  '/reddits/%s'    ];
 $API[API_LINKS_OTHER] = ['GET',  '/%s'            ];
-$API[API_LINKS_FRONT] = ['GET',  '/r/%s'          ];
+$API[API_LINKS_FRONT] = ['GET',  '/r/%s/%s'       ];
 $API[API_DEL        ] = ['POST', '/api/del'       ];
 
 #===============================================================================
@@ -387,9 +387,12 @@ sub fetch_links {
     }
 
     $subreddit = subreddit($subreddit);
+    $args = [$view];
+    push @$args, $subreddit if $subreddit;
+    
     my $result = $self->api_json_request(
-        api      => ($subreddit ? API_LINKS_OTHER : API_LINKS_FRONT),
-        args     => [$view],
+        api      => ($subreddit ? API_LINKS_FRONT : API_LINKS_OTHER),
+        args     => $args,
         data     => $query,
     );
 
