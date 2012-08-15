@@ -5,7 +5,7 @@ use Carp;
 require Reddit::Client::Thing;
 
 use base   qw/Reddit::Client::Thing/;
-use fields qw/ups downs likes score/;
+use fields qw/ups downs likes score edited/;
 
 # likes may be true, false, or null, based on user vote
 sub set_likes {
