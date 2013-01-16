@@ -1,6 +1,6 @@
 Revision history for Reddit::Client
 
-0.04    ????-??-??
+0.04    2013-01-16
         * Fixed inverted API selection bug in fetch_links
 
 0.03    2012-05-31
