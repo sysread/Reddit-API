@@ -1,6 +1,7 @@
 package Reddit::Client;
 
-our $VERSION = '0.04';
+our $VERSION = '0.04_02';
+$VERSION = eval $VERSION;
 
 use Carp;
 use Data::Dumper   qw/Dumper/;

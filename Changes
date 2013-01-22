@@ -1,5 +1,8 @@
 Revision history for Reddit::Client
 
+0.04_02 2013-01-22
+        * Fixed MANIFEST so tests pass on install
+
 0.04    2013-01-16
         * Fixed inverted API selection bug in fetch_links
 
