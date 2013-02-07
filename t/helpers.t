@@ -5,6 +5,7 @@ use JSON       qw//;
 use File::Temp qw/tempfile/;
 use IO::Capture::Stderr;
 use Reddit::Client;
+use Encode;
 use Test::More tests => 18;
 
 my ($fh, $filename) = tempfile();
@@ -34,7 +35,7 @@ my $reddit = Reddit::Client->new(session_file => $filename);
     Reddit::Client::DEBUG("test %d", 3);
 
     $capture->stop;
-    my @lines = $capture->read;
+    my @lines = map { decode("utf-8", $_) } $capture->read;
 
     ok(@lines == 3, 'DEBUG');
     like($lines[0] ,qr/^\[... ...\s+\d{1,2} \d\d:\d\d:\d\d \d\d\d\d\] \[ test 1 \]\n$/, 'DEBUG');
