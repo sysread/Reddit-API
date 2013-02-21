@@ -1,5 +1,8 @@
 Revision history for Reddit::Client
 
+0.5     2013-02-21
+        * Bumped version number for CPAN after poorly thought out upload :)
+
 0.04_02 2013-01-22
         * Fixed MANIFEST so tests pass on install
 

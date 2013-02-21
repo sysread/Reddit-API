@@ -1,6 +1,6 @@
 package Reddit::Client;
 
-our $VERSION = '0.04_02';
+our $VERSION = '0.05';
 $VERSION = eval $VERSION;
 
 use Carp;

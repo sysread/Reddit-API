@@ -10,7 +10,6 @@ WriteMakefile(
     ABSTRACT_FROM       => 'lib/Reddit/Client.pm',
     ($ExtUtils::MakeMaker::VERSION >= 6.3002 ? ('LICENSE'=> 'perl') : ()),
     PL_FILES            => {},
-
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Reddit-Client-*' },
     
