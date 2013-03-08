@@ -2,6 +2,7 @@ package Reddit::Client::Thing;
 
 use Carp;
 use List::Util qw/first/;
+require Reddit::Client;
 
 our @BOOL_FIELDS = qw/is_self likes clicked saved hidden over_18 over18
                       has_mail has_mod_mail is_mod is_gold/;
@@ -28,7 +29,7 @@ sub load_from_source_data {
                 $self->set_bool($field, $source_data->{$field});
             } else {
 	            eval { $self->{$field} = $source_data->{$field} };
-	            carp sprintf("Field %s is missing from package %s\n", $field, ref $self)
+	            Reddit::Client::DEBUG("Field %s is missing from package %s\n", $field, ref $self)
 	                if $@;
             }
         }

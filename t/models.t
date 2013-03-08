@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 use Carp;
+use IO::Capture::Stderr;
 use JSON qw//;
 use Reddit::Client;
 use Reddit::Client::Thing;
@@ -21,21 +22,29 @@ ok($thing->{name} == 0, 'set_bool');
 
 ## load_from_source_data
 my $account = Reddit::Client::Account->new();
-my $warns = '';
-open my $warns_fh, '>', \$warns;
+my $capture = IO::Capture::Stderr->new({ FORCE_CAPTURE_WARN => 1 });
 
 {
-    local *STDERR = $warns_fh;
-    $account->load_from_source_data({ name => 'foo', id => 'bar', invalid => 'baz', has_mail => JSON::false });
+    local $Reddit::Client::DEBUG = 1;
+
+    $capture->start;
+
+    $account->load_from_source_data({
+        name     => 'foo',
+        id       => 'bar',
+        invalid  => 'baz',
+        has_mail => JSON::false,
+    });
+
+    $capture->stop;
 }
 
-close $warns_fh;
-
-ok($account->{name} eq 'foo',   'load_from_source_data');
-ok($account->{id}   eq 'bar',   'load_from_source_data');
-ok($account->{has_mail} == 0,   'load_from_source_data');
-ok(!exists $account->{invalid}, 'load_from_source_data');
-ok($warns =~ "^Field invalid is missing from package Reddit::Client::Account\n", 'load_from_source_data');
+my $output = join "\n", $capture->read;
+ok($account->{name} eq 'foo',   'load_from_source_data (1)');
+ok($account->{id}   eq 'bar',   'load_from_source_data (2)');
+ok($account->{has_mail} == 0,   'load_from_source_data (3)');
+ok(!exists $account->{invalid}, 'load_from_source_data (4)');
+ok($output =~ /Field invalid is missing from package Reddit::Client::Account/, 'load_from_source_data (5)');
 
 ## set_likes
 my $votable = Reddit::Client::VotableThing->new();
