@@ -22,6 +22,7 @@ sub load_from_source_data {
     my ($self, $source_data) = @_;
     if ($source_data) {
         foreach my $field (keys %$source_data) {
+            # Set data fields
             my $setter = sprintf 'set_%s', $field;
             if ($self->can($setter)) {
                 $self->can($setter)->($self, $source_data->{$field});
@@ -31,6 +32,16 @@ sub load_from_source_data {
 	            eval { $self->{$field} = $source_data->{$field} };
 	            Reddit::Client::DEBUG("Field %s is missing from package %s\n", $field, ref $self)
 	                if $@;
+            }
+            
+            # Add getter for field
+            my $getter = sub { $self->{$field} };
+            my $class  = ref $self;
+            my $method = sprintf '%s::get_%s', $class, $field;
+            
+            unless ($self->can($method)) {
+                no strict 'refs';
+                *{$method} = \&$getter;
             }
         }
     }
