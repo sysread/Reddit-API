@@ -3,6 +3,9 @@ Revision history for Reddit::Client
 0.6     2013-03-14
         * Removed build requirements from prereqs
         * Warnings now output only when $Reddit::Client::DEBUG is true
+        * Added warnings, strict pragmas
+        * Fixed circular imports
+        * Fixed bug where _session field was private in Perl 5.8.x
 
 0.5     2013-02-21
         * Bumped version number for CPAN after poorly thought out upload :)
