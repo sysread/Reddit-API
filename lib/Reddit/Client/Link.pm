@@ -1,5 +1,7 @@
 package Reddit::Client::Link;
 
+use strict;
+use warnings;
 use Carp;
 
 require Reddit::Client::VotableThing;
@@ -13,7 +15,7 @@ use fields qw/link_flair_text media url link_flair_css_class num_reports
 
 sub comments {
     my $self = shift;
-    return $self->{_session}->get_comments(permalink => $self->{permalink});
+    return $self->{session}->get_comments(permalink => $self->{permalink});
 }
 
 1;

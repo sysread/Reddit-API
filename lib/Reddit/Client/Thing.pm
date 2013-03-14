@@ -1,24 +1,28 @@
 package Reddit::Client::Thing;
 
+use strict;
+use warnings;
 use Carp;
+
 use List::Util qw/first/;
-require Reddit::Client;
 
 our @BOOL_FIELDS = qw/is_self likes clicked saved hidden over_18 over18
                       has_mail has_mod_mail is_mod is_gold/;
 
 
-use fields qw/_session name id/;
+use fields qw/session name id/;
 
 sub new {
     my ($class, $reddit, $source_data) = @_;
     my $self = fields::new($class);
-    $self->{_session} = $reddit;
+    $self->{session} = $reddit;
     $self->load_from_source_data($source_data) if $source_data;
     return $self;
 }
 
 sub load_from_source_data {
+    require Reddit::Client;
+ 
     my ($self, $source_data) = @_;
     if ($source_data) {
         foreach my $field (keys %$source_data) {
@@ -33,12 +37,12 @@ sub load_from_source_data {
 	            Reddit::Client::DEBUG("Field %s is missing from package %s\n", $field, ref $self)
 	                if $@;
             }
-            
+
             # Add getter for field
             my $getter = sub { $self->{$field} };
             my $class  = ref $self;
             my $method = sprintf '%s::get_%s', $class, $field;
-            
+
             unless ($self->can($method)) {
                 no strict 'refs';
                 *{$method} = \&$getter;

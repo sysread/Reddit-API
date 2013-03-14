@@ -1,9 +1,13 @@
 package Reddit::Client::Request;
 
+use strict;
+use warnings;
 use Carp;
+
 use LWP::UserAgent qw//;
 use HTTP::Request  qw//;
 use URI::Encode    qw/uri_encode/;
+
 require Reddit::Client;
 
 use fields (

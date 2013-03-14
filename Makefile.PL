@@ -1,7 +1,7 @@
-use 5.006;
 use strict;
 use warnings;
-use ExtUtils::MakeMaker;
+use 5.008001;
+use ExtUtils::MakeMaker 6.30;
 
 WriteMakefile(
     NAME                => 'Reddit::Client',

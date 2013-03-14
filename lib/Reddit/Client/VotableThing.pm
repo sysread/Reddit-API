@@ -1,5 +1,7 @@
 package Reddit::Client::VotableThing;
 
+use strict;
+use warnings;
 use Carp;
 
 require Reddit::Client::Thing;
@@ -15,32 +17,32 @@ sub set_likes {
 
 sub vote {
     my ($self, $direction) = @_;
-    $self->{_session}->vote($self->{name}, $direction);
+    $self->{session}->vote($self->{name}, $direction);
 }
 
 sub comment {
     my ($self, $comment) = @_;
-    $self->{_session}->submit_comment(parent_id => $self->{name}, text => $comment);
+    $self->{session}->submit_comment(parent_id => $self->{name}, text => $comment);
 }
 
 sub save {
     my $self = shift;
-    $self->{_session}->save($self->{name});
+    $self->{session}->save($self->{name});
 }
 
 sub unsave {
     my $self = shift;
-    $self->{_session}->unsave($self->{name});
+    $self->{session}->unsave($self->{name});
 }
 
 sub hide {
     my $self = shift;
-    $self->{_session}->hide($self->{name});
+    $self->{session}->hide($self->{name});
 }
 
 sub unhide {
     my $self = shift;
-    $self->{_session}->unhide($self->{name});
+    $self->{session}->unhide($self->{name});
 }
 
 1;

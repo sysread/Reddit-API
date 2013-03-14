@@ -1,8 +1,9 @@
 package Reddit::Client::SubReddit;
 
+use strict;
+use warnings;
 use Carp;
 
-require Reddit::Client;
 require Reddit::Client::Thing;
 
 use base   qw/Reddit::Client::Thing/;
@@ -12,17 +13,17 @@ use fields qw/over18 header_img created_utc header_title header_size
 
 sub links {
     my ($self, %param) = @_;
-    return $self->{_session}->fetch_links(subreddit => $self->{url}, %param);
+    return $self->{session}->fetch_links(subreddit => $self->{url}, %param);
 }
 
 sub submit_link {
     my ($self, $title, $url) = @_;
-    $self->{_session}->submit_link(title => $title, url => $url, sr => $self->{title}, kind => 'link');
+    $self->{session}->submit_link(title => $title, url => $url, sr => $self->{title}, kind => 'link');
 }
 
 sub submit_text {
     my ($self, $title, $text) = @_;
-    $self->{_session}->submit_text(title => $title, text => $text, sr => $self->{title}, kind => 'text');
+    $self->{session}->submit_text(title => $title, text => $text, sr => $self->{title}, kind => 'text');
 }
 
 1;

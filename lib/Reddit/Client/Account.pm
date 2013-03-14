@@ -1,5 +1,7 @@
 package Reddit::Client::Account;
 
+use strict;
+use warnings;
 use Carp;
 
 require Reddit::Client::Thing;

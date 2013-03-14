@@ -1,5 +1,7 @@
 package Reddit::Client::Comment;
 
+use strict;
+use warnings;
 use Carp;
 
 require Reddit::Client::VotableThing;
@@ -14,7 +16,7 @@ use fields qw/link_flair_text media url link_flair_css_class num_reports created
 sub set_replies {
     my ($self, $value) = @_;
     if (ref $value && exists $value->{data}{children}) {
-	    $self->{replies} = [ map { Reddit::Client::Comment->new($self->{_session}, $_->{data}) } @{$value->{data}{children}} ];
+	    $self->{replies} = [ map { Reddit::Client::Comment->new($self->{session}, $_->{data}) } @{$value->{data}{children}} ];
     } else {
         $self->{replies} = [];
     }
