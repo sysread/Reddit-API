@@ -12,15 +12,18 @@ WriteMakefile(
     PL_FILES            => {},
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Reddit-Client-*' },
-    
-    PREREQ_PM           => {
+
+    PREREQ_PM => {
         'HTTP::Request'       => 0,
         'JSON'                => 0,
         'List::Util'          => 0,
         'LWP::UserAgent'      => 0,
+        'URI::Encode'         => 0,
+    },
+
+    BUILD_REQUIRES => {
+        'IO::Capture::Stderr' => 0,
         'Test::More'          => 0,
         'Test::MockModule'    => 0,
-        'URI::Encode'         => 0,
-        'IO::Capture::Stderr' => 0,
-    },
+    }
 );

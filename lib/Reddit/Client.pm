@@ -1,13 +1,11 @@
 package Reddit::Client;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 $VERSION = eval $VERSION;
 
 use Carp;
 use Data::Dumper   qw/Dumper/;
 use JSON           qw//;
-use LWP::UserAgent qw//;
-use HTTP::Request  qw//;
 use File::Spec     qw//;
 use Digest::MD5    qw/md5_hex/;
 use POSIX          qw/strftime/;
