@@ -1,5 +1,8 @@
 Revision history for Reddit::Client
 
+0.7     Not yet
+        * Changed date format in Reddit::Client::DEBUG
+
 0.6     2013-03-14
         * Removed build requirements from prereqs
         * Warnings now output only when $Reddit::Client::DEBUG is true

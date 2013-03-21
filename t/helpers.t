@@ -37,10 +37,12 @@ my $reddit = Reddit::Client->new(session_file => $filename);
     $capture->stop;
     my @lines = map { decode("utf-8", $_) } $capture->read;
 
-    ok(@lines == 3, 'DEBUG');
-    like($lines[0] ,qr/^\[... ...\s+\d{1,2} \d\d:\d\d:\d\d \d\d\d\d\] \[ test 1 \]\n$/, 'DEBUG');
-    like($lines[1] ,qr/^\[... ...\s+\d{1,2} \d\d:\d\d:\d\d \d\d\d\d\] \[ test 2 \]\n$/, 'DEBUG');
-    like($lines[2] ,qr/^\[... ...\s+\d{1,2} \d\d:\d\d:\d\d \d\d\d\d\] \[ test 3 \]\n$/, 'DEBUG');
+    ok(@lines == 3, 'DEBUG (1)');
+    
+    my $strftime = '\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d';
+    like($lines[0], qr/\[$strftime\] \[ test 1 \]\n$/, 'DEBUG (2)');
+    like($lines[1], qr/\[$strftime\] \[ test 2 \]\n$/, 'DEBUG (3)');
+    like($lines[2], qr/\[$strftime\] \[ test 3 \]\n$/, 'DEBUG (4)');
 }
 
 
