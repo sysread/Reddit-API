@@ -1,6 +1,6 @@
 package Reddit::Client;
 
-our $VERSION = '0.06';
+our $VERSION = '0.7';
 $VERSION = eval $VERSION;
 
 use strict;
