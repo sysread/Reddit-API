@@ -2,6 +2,8 @@ Revision history for Reddit::Client
 
 0.7     Not yet
         * Changed date format in Reddit::Client::DEBUG
+        * Fixed ordering bug in Reddit::Client->fetch_links
+        * Fixed version mismatch on POD docs
 
 0.6     2013-03-14
         * Removed build requirements from prereqs
