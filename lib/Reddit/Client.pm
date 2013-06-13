@@ -93,7 +93,7 @@ $API[API_DEL        ] = ['POST', '/api/del'       ];
 sub DEBUG {
     if ($DEBUG) {
 	    my ($format, @args) = @_;
-	    my $ts  = strftime "%F %T", localtime;
+	    my $ts  = strftime "%Y-%m-%d %H:%M:%S", localtime;
 	    my $msg = sprintf $format, @args;
 	    chomp $msg;
 	    printf STDERR "[%s] [ %s ]\n", $ts, $msg;
