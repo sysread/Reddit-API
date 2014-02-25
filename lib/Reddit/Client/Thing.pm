@@ -39,7 +39,7 @@ sub load_from_source_data {
             }
 
             # Add getter for field
-            my $getter = sub { $self->{$field} };
+            my $getter = sub { $_[0]->{$field} };
             my $class  = ref $self;
             my $method = sprintf '%s::get_%s', $class, $field;
 
