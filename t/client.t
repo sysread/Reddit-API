@@ -1,10 +1,11 @@
 use strict;
 use warnings;
 use Carp;
+use IO::Capture::Stderr;
 use JSON qw//;
 use Reddit::Client;
 use Test::MockModule;
-use Test::More tests => 44;
+use Test::More tests => 48;
 
 sub json_request_mock {
     my $data = shift || {};
@@ -23,9 +24,19 @@ sub json_error_mock {
 
 my $lwp = Test::MockModule->new('LWP::UserAgent');
 
+{ ## new
+    my $capture = IO::Capture::Stderr->new({ FORCE_CAPTURE_WARN => 1 });
+    $capture->start;
+    my $reddit = new_ok('Reddit::Client');
+    $capture->stop;
+    ok($capture->read =~ m/user_agent required/i);
+
+    $reddit = new_ok('Reddit::Client', [user_agent => 'Test UA']);
+    is($reddit->{user_agent}, 'Test UA');
+}
 
 { ## login
-    my $reddit = Reddit::Client->new();
+    my $reddit = Reddit::Client->new(user_agent => 'test');
 
     eval { $reddit->login };
     ok($@ =~ /^Username expected/, 'login');
@@ -45,7 +56,7 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 { ## me
     $lwp->mock('request', json_request_mock);
 
-    my $reddit = Reddit::Client->new();
+    my $reddit = Reddit::Client->new(user_agent => 'test');
     $reddit->{modhash} = 'test';
     $reddit->{cookie}  = 'test';
     my $me = $reddit->me;
@@ -55,7 +66,7 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 }
 
 { ## list_subreddits
-    my $reddit = Reddit::Client->new();
+    my $reddit = Reddit::Client->new(user_agent => 'test');
     $lwp->mock('request', json_request_mock({ children => [{ data => { display_name => 'test' }}]}));
 
     eval { $reddit->list_subreddits() };
@@ -79,7 +90,7 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 }
 
 { ## find_subreddits
-    my $reddit = Reddit::Client->new();
+    my $reddit = Reddit::Client->new(user_agent => 'test');
     $lwp->mock('request', json_request_mock({ children => [{ data => { display_name => 'test' }}]}));
 
     eval { $reddit->find_subreddits };
@@ -94,7 +105,7 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 }
 
 { ## fetch_links
-    my $reddit = Reddit::Client->new();
+    my $reddit = Reddit::Client->new(user_agent => 'test');
     $lwp->mock('request', json_request_mock({ before => 'before', after => 'after', children => [ { data => {} }]}));
 
     my $links = $reddit->fetch_links();
@@ -106,7 +117,7 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 }
 
 { ## submit link
-    my $reddit = Reddit::Client->new();
+    my $reddit = Reddit::Client->new(user_agent => 'test');
     $reddit->{modhash} = 'test';
     $reddit->{cookie}  = 'test';
     $lwp->mock('request', json_request_mock({ name => 'test' }));
@@ -123,7 +134,7 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 }
 
 { ## submit_text
-    my $reddit = Reddit::Client->new();
+    my $reddit = Reddit::Client->new(user_agent => 'test');
     $reddit->{modhash} = 'test';
     $reddit->{cookie}  = 'test';
     $lwp->mock('request', json_request_mock({ name => 'test' }));
@@ -140,7 +151,7 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 }
 
 { ## get_comments
-    my $reddit = Reddit::Client->new();
+    my $reddit = Reddit::Client->new(user_agent => 'test');
     $lwp->mock('request', sub {
         my $r = HTTP::Response->new(200, 'OK');
         $r->content(JSON::to_json([ undef, { data => { children => [ { data => { title => 'test' }}]}}]));
@@ -156,7 +167,7 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 }
 
 { ## submit_comment
-    my $reddit = Reddit::Client->new();
+    my $reddit = Reddit::Client->new(user_agent => 'test');
     $reddit->{modhash} = 'test';
     $reddit->{cookie}  = 'test';
     $lwp->mock('request', json_request_mock({ things => [ { data => { id => 'foo' }}]}));
@@ -174,7 +185,7 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 #### Minimal testing for API functions that do little to no data processing
 
 {
-    my $reddit = Reddit::Client->new();
+    my $reddit = Reddit::Client->new(user_agent => 'test');
     $lwp->mock('request', json_request_mock({}));
 
     ## info

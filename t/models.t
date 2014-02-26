@@ -12,7 +12,7 @@ use Reddit::Client::VotableThing;
 use Reddit::Client::Comment;
 use Test::More tests => 13;
 
-my $reddit = Reddit::Client->new();
+my $reddit = Reddit::Client->new(user_agent => 'test');
 
 ## set_bool
 my $thing = Reddit::Client::Thing->new();

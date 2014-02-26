@@ -125,11 +125,18 @@ use fields (
     'modhash',      # store session modhash
     'cookie',       # store user cookie
     'session_file', # path to session file
+    'user_agent',   # user agent string
 );
 
 sub new {
     my ($class, %param) = @_;
     my $self = fields::new($class);
+
+    if (not exists $param{user_agent}) {
+        carp "Reddit::Client->new: user_agent required in future version.";
+        $param{user_agent} = $UA;
+    }
+    $self->{user_agent} = $param{user_agent};
 
     if ($param{session_file}) {
         $self->{session_file} = $param{session_file};
@@ -149,7 +156,7 @@ sub request {
     $path =~ s/^\/+//;
 
     my $request = Reddit::Client::Request->new(
-        user_agent => $UA,
+        user_agent => $self->{user_agent},
         url        => sprintf('%s/%s', $BASE_URL, $path),
         method     => $method,
         query      => $query,
@@ -622,7 +629,8 @@ For more information about the Reddit API, see L<https://github.com/reddit/reddi
 
 =item $UA
 
-This is the user agent string, and defaults to C<Reddit::Client/$VERSION>.
+This is the user agent string, and defaults to C<Reddit::Client/$VERSION>. 
+NOTE: This is now deprecated in favor of the user_agent argument to new().
 
 
 =item $DEBUG
@@ -636,12 +644,13 @@ When set to true, outputs a small amount of debugging information.
 
 =over
 
-=item new(session_file => ...)
+=item new(user_agent => ..., session_file => ...)
 
-Begins a new or loads an existing reddit session. If C<session_file> is
-provided, it will be read and parsed as JSON. If session data is found, it
-is restored. Otherwise, a new session is started.
-
+Begins a new or loads an existing reddit session. The C<user_agent> argument
+will be required in a future release. Omitting it will generate a warning.
+If C<session_file> is provided, it will be read and parsed as JSON. If 
+session data is found, it is restored. Otherwise, a new session is started. 
+Session data does not restore the user_agent string of the original session.
 
 =item is_logged_in
 

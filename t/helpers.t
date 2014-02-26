@@ -9,7 +9,7 @@ use Encode;
 use Test::More tests => 18;
 
 my ($fh, $filename) = tempfile();
-my $reddit = Reddit::Client->new(session_file => $filename);
+my $reddit = Reddit::Client->new(user_agent => 'test', session_file => $filename);
 
 ## DEBUG
 {
