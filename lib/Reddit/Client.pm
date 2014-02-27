@@ -92,11 +92,11 @@ $API[API_DEL        ] = ['POST', '/api/del'       ];
 
 sub DEBUG {
     if ($DEBUG) {
-	    my ($format, @args) = @_;
-	    my $ts  = strftime "%Y-%m-%d %H:%M:%S", localtime;
-	    my $msg = sprintf $format, @args;
-	    chomp $msg;
-	    printf STDERR "[%s] [ %s ]\n", $ts, $msg;
+        my ($format, @args) = @_;
+        my $ts  = strftime "%Y-%m-%d %H:%M:%S", localtime;
+        my $msg = sprintf $format, @args;
+        chomp $msg;
+        printf STDERR "[%s] [ %s ]\n", $ts, $msg;
     }
 }
 
@@ -110,7 +110,7 @@ sub subreddit {
         if ($subject eq '') { # front page
             return '';
         } else {              # subreddit
-	        return $subject;
+            return $subject;
         }
     } else { # fail
         return;
@@ -174,9 +174,9 @@ sub json_request {
 
     if ($method eq 'POST') {
         $post_data ||= {};
-	    $post_data->{api_type} = 'json';
+        $post_data->{api_type} = 'json';
     } else {
-	    $path .= '.json';
+        $path .= '.json';
     }
 
     my $response = $self->request($method, $path, $query, $post_data);
@@ -337,9 +337,9 @@ sub list_subreddits {
     defined $type || croak 'Expected $type"';
 
     $self->require_login
-	    if $type eq SUBREDDITS_MOD
-	    || $type eq SUBREDDITS_MINE
-	    || $type eq SUBREDDITS_CONTRIB;
+        if $type eq SUBREDDITS_MOD
+        || $type eq SUBREDDITS_MINE
+        || $type eq SUBREDDITS_CONTRIB;
 
     my $result = $self->api_json_request(api => API_SUBREDDITS, args => [$type]);
     return {
@@ -390,9 +390,9 @@ sub fetch_links {
 
     my $query  = {};
     if ($before || $after || $limit) {
-	    $query->{limit}  = $limit  if defined $limit;
-	    $query->{before} = $before if defined $before;
-	    $query->{after}  = $after  if defined $after;
+        $query->{limit}  = $limit  if defined $limit;
+        $query->{before} = $before if defined $before;
+        $query->{after}  = $after  if defined $after;
     }
 
     $subreddit = subreddit($subreddit);
@@ -566,16 +566,15 @@ __END__
 
 Reddit::Client - A perl wrapper for Reddit
 
-=head1 VERSION
-
-Version 0.07
-
 =head1 SYNOPSIS
 
     use Reddit::Client;
 
     my $session_file = '~/.reddit';
-    my $reddit       = Reddit::Client->new(session_file => $session_file);
+    my $reddit       = Reddit::Client->new(
+        session_file => $session_file,
+        user_agent   => 'MyApp/1.0',
+    );
 
     unless ($reddit->is_logged_in) {
         $reddit->login('someone', 'secret');
@@ -604,24 +603,24 @@ For more information about the Reddit API, see L<https://github.com/reddit/reddi
 
 =head1 CONSTANTS
 
-	VIEW_HOT            "Hot" links feed
-	VIEW_NEW            "New" links feed
-	VIEW_CONTROVERSIAL  "Controversial" links feed
-	VIEW_TOP            "Top" links feed
-	
-	VIEW_DEFAULT        Default feed if not specified (VIEW_HOT)
-	DEFAULT_LIMIT       The default number of links to be retried (25)
-	
-	VOTE_UP             Up vote
-	VOTE_DOWN           Down vote
-	VOTE_NONE           "Un" vote
+    VIEW_HOT            "Hot" links feed
+    VIEW_NEW            "New" links feed
+    VIEW_CONTROVERSIAL  "Controversial" links feed
+    VIEW_TOP            "Top" links feed
 
-	SUBREDDITS_HOME     List reddits on the homepage
-	SUBREDDITS_POPULAR  List popular reddits
-	SUBREDDITS_NEW      List new reddits
-	SUBREDDITS_MINE     List reddits for which the logged in user is subscribed
-	SUBREDDITS_CONTRIB  List reddits for which the logged in user is a contributor
-	SUBREDDITS_MOD      List reddits for which the logged in user is a moderator
+    VIEW_DEFAULT        Default feed if not specified (VIEW_HOT)
+    DEFAULT_LIMIT       The default number of links to be retried (25)
+
+    VOTE_UP             Up vote
+    VOTE_DOWN           Down vote
+    VOTE_NONE           "Un" vote
+
+    SUBREDDITS_HOME     List reddits on the homepage
+    SUBREDDITS_POPULAR  List popular reddits
+    SUBREDDITS_NEW      List new reddits
+    SUBREDDITS_MINE     List reddits for which the logged in user is subscribed
+    SUBREDDITS_CONTRIB  List reddits for which the logged in user is a contributor
+    SUBREDDITS_MOD      List reddits for which the logged in user is a moderator
 
 =head1 GLOBALS
 
