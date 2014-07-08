@@ -628,7 +628,7 @@ For more information about the Reddit API, see L<https://github.com/reddit/reddi
 
 =item $UA
 
-This is the user agent string, and defaults to C<Reddit::Client/$VERSION>. 
+This is the user agent string, and defaults to C<Reddit::Client/$VERSION>.
 NOTE: This is now deprecated in favor of the user_agent argument to new().
 
 
@@ -647,8 +647,8 @@ When set to true, outputs a small amount of debugging information.
 
 Begins a new or loads an existing reddit session. The C<user_agent> argument
 will be required in a future release. Omitting it will generate a warning.
-If C<session_file> is provided, it will be read and parsed as JSON. If 
-session data is found, it is restored. Otherwise, a new session is started. 
+If C<session_file> is provided, it will be read and parsed as JSON. If
+session data is found, it is restored. Otherwise, a new session is started.
 Session data does not restore the user_agent string of the original session.
 
 =item is_logged_in

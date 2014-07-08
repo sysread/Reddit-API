@@ -1,8 +1,9 @@
 Revision history for Reddit::Client
 
-0.8     2013-??-??
+0.8     2014-??-??
         * User agent changed to a constructor param (Daniel Hagan)
         * Fixed memory leak in generated constructors (Daniel Hagan)
+        * Fixed broken URI-encoding (thanks Chloe for bug report)
 
 0.7     2013-01-24
         * Date format fixed for portability

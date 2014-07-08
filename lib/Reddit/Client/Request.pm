@@ -47,7 +47,8 @@ sub new {
 
 sub build_query {
     my $param = shift or return '';
-    join '&', map {uri_encode($_) . '=' . uri_encode($param->{$_})} sort keys %$param;
+    my $opt   = { encode_reserved => 1 };
+    join '&', map {uri_encode($_, $opt) . '=' . uri_encode($param->{$_}, $opt)} sort keys %$param;
 }
 
 sub build_request {
@@ -69,7 +70,7 @@ sub build_request {
     } else {
         $request->method('GET');
     }
-    
+
     return $request;
 }
 
