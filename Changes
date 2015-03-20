@@ -1,6 +1,9 @@
 Revision history for Reddit::Client
 
-0.8     2014-??-??
+0.9     2015-??-??
+        * Expand tilde in session file name (aggrolite)
+
+0.8     2014-08-15
         * User agent changed to a constructor param (Daniel Hagan)
         * Fixed memory leak in generated constructors (Daniel Hagan)
         * Fixed broken URI-encoding (thanks Chloe for bug report)

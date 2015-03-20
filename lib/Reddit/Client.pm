@@ -1,6 +1,6 @@
 package Reddit::Client;
 
-our $VERSION = '0.8';
+our $VERSION = '0.8_1';
 $VERSION = eval $VERSION;
 
 use strict;
@@ -12,6 +12,7 @@ use JSON           qw//;
 use File::Spec     qw//;
 use Digest::MD5    qw/md5_hex/;
 use POSIX          qw/strftime/;
+use File::Path::Expand qw//;
 
 require Reddit::Client::Account;
 require Reddit::Client::Comment;
@@ -256,7 +257,9 @@ sub save_session {
 
     # Prepare session and file path
     my $session   = { modhash => $self->{modhash}, cookie => $self->{cookie} };
-    my $file_path = defined $file ? $file : $self->{session_file};
+    my $file_path = File::Path::Expand::expand_filename(
+        defined $file ? $file : $self->{session_file}
+    );
 
     DEBUG('Save session to %s', $file_path);
 
@@ -274,7 +277,9 @@ sub save_session {
 sub load_session {
     my ($self, $file) = @_;
     $self->{session_file} || $file || croak 'Expected $file';
-    my $file_path = defined $file ? $file : $self->{session_file};
+    my $file_path = File::Path::Expand::expand_filename(
+        defined $file ? $file : $self->{session_file}
+    );
 
     DEBUG('Load session from %s', $file_path);
 

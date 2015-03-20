@@ -12,6 +12,8 @@ Makefile.PL
 MANIFEST
 Changes
 README
+MYMETA.yml
+MYMETA.json
 
 t/00-load.t
 t/boilerplate.t
