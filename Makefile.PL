@@ -19,6 +19,7 @@ WriteMakefile(
         'List::Util'          => 0,
         'LWP::UserAgent'      => 0,
         'URI::Encode'         => 0,
+        'File::Path::Expand'  => 1.02,
     },
 
     BUILD_REQUIRES => {
