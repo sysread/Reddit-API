@@ -8,7 +8,7 @@ require Reddit::Client::Thing;
 
 use base   qw/Reddit::Client::Thing/;
 use fields qw/has_mail created modhash created_utc link_karma
-              comment_karma is_gold is_mod has_mod_mail/;
+              comment_karma is_gold is_mod has_mod_mail over_18/;
 
 1;
 
