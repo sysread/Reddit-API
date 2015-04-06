@@ -608,6 +608,8 @@ For more information about the Reddit API, see L<https://github.com/reddit/reddi
 
 =head1 CONSTANTS
 
+Note that none of these constants are exported by C<Reddit::Client>.
+
     VIEW_HOT            "Hot" links feed
     VIEW_NEW            "New" links feed
     VIEW_CONTROVERSIAL  "Controversial" links feed
