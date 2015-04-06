@@ -7,6 +7,7 @@ use Carp;
 use List::Util qw/first/;
 
 our @BOOL_FIELDS = qw/is_self likes clicked saved hidden over_18 over18
+                      has_verified_email hide_from_robots is_friend
                       has_mail has_mod_mail is_mod is_gold/;
 
 
