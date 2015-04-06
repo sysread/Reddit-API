@@ -3,6 +3,7 @@ Revision history for Reddit::Client
 0.10    2015-?-?
         * Clarified conflicting licensing in docs
         * Clarified that constants are not exported in docs
+        * Reddit::Client::Account supports more fields (aggrolite)
 
 0.9     2015-03-23
         * Expand tilde in session file name (aggrolite)
