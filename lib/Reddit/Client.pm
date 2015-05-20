@@ -38,6 +38,7 @@ use constant VOTE_NONE          => 0;
 
 use constant SUBMIT_LINK        => 'link';
 use constant SUBMIT_SELF        => 'self';
+use constant SUBMIT_MESSAGE     => 'message';
 
 use constant API_ME             => 0;
 use constant API_INFO           => 1;
@@ -54,6 +55,7 @@ use constant API_SUBREDDITS     => 11;
 use constant API_LINKS_FRONT    => 12;
 use constant API_LINKS_OTHER    => 13;
 use constant API_DEL            => 14;
+use constant API_MESSAGE        => 15;
 
 use constant SUBREDDITS_HOME    => '';
 use constant SUBREDDITS_MINE    => 'mine';
@@ -86,6 +88,7 @@ $API[API_SUBREDDITS ] = ['GET',  '/reddits/%s'    ];
 $API[API_LINKS_OTHER] = ['GET',  '/%s'            ];
 $API[API_LINKS_FRONT] = ['GET',  '/r/%s/%s'       ];
 $API[API_DEL        ] = ['POST', '/api/del'       ];
+$API[API_MESSAGE    ] = ['POST', '/api/compose'   ];
 
 #===============================================================================
 # Package routines
@@ -509,6 +512,31 @@ sub submit_comment {
     });
 
     return $result->{data}{things}[0]{data}{id};
+}
+
+#===============================================================================
+# Private messages
+#===============================================================================
+
+sub send_message {
+    	my ($self, %param) = @_;
+	my $to		= $param{to}	 	|| croak 'Expected "to"';
+	my $subject	= $param{subject}	|| croak 'Expected "subject"';
+	my $text	= $param{text}		|| croak 'Expected "text"';
+
+	croak '"subject" cannot be longer than 100 characters' if length $subject > 100;
+    	
+	$self->require_login;
+    	DEBUG('Submit message to %s: %s', $to, $subject);
+
+    	my $result = $self->api_json_request(api => API_MESSAGE, data => {
+       	 to    		=> $to,
+       	 subject  	=> $subject,
+       	 text		=> $text,
+       	 kind   	=> SUBMIT_MESSAGE,
+    	});
+
+	return $result;
 }
 
 #===============================================================================
