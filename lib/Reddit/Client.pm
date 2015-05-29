@@ -123,6 +123,7 @@ sub subreddit {
 #===============================================================================
 
 use fields (
+    'user',         # user name when logged in, set by 'login' and 'load_session'
     'modhash',      # store session modhash
     'cookie',       # store user cookie
     'session_file', # path to session file
@@ -256,7 +257,12 @@ sub save_session {
     $self->{session_file} || $file || croak 'Expected $file';
 
     # Prepare session and file path
-    my $session   = { modhash => $self->{modhash}, cookie => $self->{cookie} };
+    my $session = {
+        user    => $self->{user},
+        modhash => $self->{modhash},
+        cookie  => $self->{cookie},
+    };
+
     my $file_path = File::Path::Expand::expand_filename(
         defined $file ? $file : $self->{session_file}
     );
@@ -290,6 +296,11 @@ sub load_session {
 
         if ($data) {
             my $session = JSON::from_json($data);
+
+            warn "Old session detected - user field not present. You may need to create a new login session using 'login' to use some API calls."
+                unless exists $self->{user};
+
+            $self->{user}    = $session->{user};
             $self->{modhash} = $session->{modhash};
             $self->{cookie}  = $session->{cookie};
 
@@ -324,6 +335,7 @@ sub login {
 
     $self->{modhash} = $result->{data}{modhash};
     $self->{cookie}  = $result->{data}{cookie};
+    $self->{user}    = $usr;
 
     return 1;
 }

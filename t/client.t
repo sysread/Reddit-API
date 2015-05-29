@@ -5,7 +5,7 @@ use IO::Capture::Stderr;
 use JSON qw//;
 use Reddit::Client;
 use Test::MockModule;
-use Test::More tests => 48;
+use Test::More;
 
 sub json_request_mock {
     my $data = shift || {};
@@ -47,8 +47,9 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
     $lwp->mock('request', json_request_mock({ modhash => 'test', cookie  => 'test' }));
 
     $reddit->login('testuser', 'testpass');
-    ok($reddit->{modhash} eq 'test', 'login');
-    ok($reddit->{cookie}  eq 'test', 'login');
+    is($reddit->{modhash}, 'test', 'login - modhash');
+    is($reddit->{cookie}, 'test', 'login - modhash');
+    is($reddit->{user}, 'testuser', 'login - username');
 
     $lwp->unmock_all;
 }
@@ -220,5 +221,7 @@ my $lwp = Test::MockModule->new('LWP::UserAgent');
 
     $lwp->unmock_all;
 }
+
+done_testing;
 
 1;
