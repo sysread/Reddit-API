@@ -20,6 +20,10 @@ WriteMakefile(
         'LWP::UserAgent'      => 0,
         'URI::Encode'         => 0,
         'File::Path::Expand'  => 1.02,
+
+        'Moo'                 => 0,
+        'Types::Standard'     => 0,
+        'Const::Fast'         => 0,
     },
 
     BUILD_REQUIRES => {
