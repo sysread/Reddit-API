@@ -1,6 +1,6 @@
 package Reddit::Client;
 
-our $VERSION = '0.9_1';
+our $VERSION = '0.92';
 $VERSION = eval $VERSION;
 
 use strict;
@@ -38,6 +38,7 @@ use constant VOTE_NONE          => 0;
 
 use constant SUBMIT_LINK        => 'link';
 use constant SUBMIT_SELF        => 'self';
+use constant SUBMIT_MESSAGE     => 'message';
 
 use constant API_ME             => 0;
 use constant API_INFO           => 1;
@@ -54,6 +55,8 @@ use constant API_SUBREDDITS     => 11;
 use constant API_LINKS_FRONT    => 12;
 use constant API_LINKS_OTHER    => 13;
 use constant API_DEL            => 14;
+use constant API_MESSAGE        => 15;
+use constant API_COMMENTS	=> 16;
 
 use constant SUBREDDITS_HOME    => '';
 use constant SUBREDDITS_MINE    => 'mine';
@@ -67,11 +70,11 @@ use constant SUBREDDITS_MOD     => 'moderator';
 #===============================================================================
 
 our $DEBUG           = 0;
-our $BASE_URL        = 'http://www.reddit.com';
+our $BASE_URL        = 'https://oauth.reddit.com';
 our $UA              = sprintf 'Reddit::Client/%f', $VERSION;
 
 our @API;
-$API[API_ME         ] = ['GET',  '/api/me'        ];
+$API[API_ME         ] = ['GET',  '/api/v1/me'     ];
 $API[API_INFO       ] = ['GET',  '/by_id/%s'      ];
 $API[API_SEARCH     ] = ['GET',  '/reddits/search'];
 $API[API_LOGIN      ] = ['POST', '/api/login/%s'  ];
@@ -86,7 +89,8 @@ $API[API_SUBREDDITS ] = ['GET',  '/reddits/%s'    ];
 $API[API_LINKS_OTHER] = ['GET',  '/%s'            ];
 $API[API_LINKS_FRONT] = ['GET',  '/r/%s/%s'       ];
 $API[API_DEL        ] = ['POST', '/api/del'       ];
-
+$API[API_MESSAGE    ] = ['POST', '/api/compose'   ];
+$API[API_COMMENTS   ] = ['GET',  '/r/%s/comments' ];
 #===============================================================================
 # Package routines
 #===============================================================================
@@ -123,11 +127,17 @@ sub subreddit {
 #===============================================================================
 
 use fields (
-    'user',         # user name when logged in, set by 'login' and 'load_session'
-    'modhash',      # store session modhash
-    'cookie',       # store user cookie
-    'session_file', # path to session file
-    'user_agent',   # user agent string
+    	'modhash',      # store session modhash
+    	'cookie',       # store user cookie
+    	'session_file', # path to session file
+    	'user_agent',   # user agent string
+    	'token',	# oauth authorization token
+    	'tokentype',    # unused but saved for reference
+    	'last_token',	# time last token was acquired
+    	'client_id',	# These 4 values saved for automatic token refreshing
+    	'secret',
+	'username',
+	'password',
 );
 
 sub new {
@@ -154,9 +164,13 @@ sub new {
 
 sub request {
     my ($self, $method, $path, $query, $post_data) = @_;
+
+	if ($self->{last_token} <= time - 3600) {
+		$self->get_token($self->{client_id}, $self->{secret}, $self->{username}, $self->{password});
+	}
+
     # Trim leading slashes off of the path
     $path =~ s/^\/+//;
-
     my $request = Reddit::Client::Request->new(
         user_agent => $self->{user_agent},
         url        => sprintf('%s/%s', $BASE_URL, $path),
@@ -165,9 +179,25 @@ sub request {
         post_data  => $post_data,
         modhash    => $self->{modhash},
         cookie     => $self->{cookie},
+	token	   => $self->{token},
+	tokentype  => $self->{tokentype},
     );
 
     return $request->send;
+}
+
+sub get_token {
+	my ($self, $client_id, $secret, $username, $password) = @_;
+	$self->{client_id} 	= $client_id; # store for automatic refreshing
+	$self->{secret} 	= $secret;
+	$self->{username}	= $username;
+	$self->{password}	= $password;
+	$self->{last_token} 	= time;
+
+	my $message = Reddit::Client::Request->token_request($client_id, $secret, $username, $password, $self->{user_agent});
+	my $j = JSON::decode_json($message);
+	$self->{token} 		= $j->{access_token};
+	$self->{tokentype} 	= $j->{token_type};
 }
 
 sub json_request {
@@ -178,7 +208,7 @@ sub json_request {
         $post_data ||= {};
         $post_data->{api_type} = 'json';
     } else {
-        $path .= '.json';
+        #$path .= '.json'; # the oauth api returns json by default
     }
 
     my $response = $self->request($method, $path, $query, $post_data);
@@ -257,12 +287,7 @@ sub save_session {
     $self->{session_file} || $file || croak 'Expected $file';
 
     # Prepare session and file path
-    my $session = {
-        user    => $self->{user},
-        modhash => $self->{modhash},
-        cookie  => $self->{cookie},
-    };
-
+    my $session   = { modhash => $self->{modhash}, cookie => $self->{cookie} };
     my $file_path = File::Path::Expand::expand_filename(
         defined $file ? $file : $self->{session_file}
     );
@@ -296,11 +321,6 @@ sub load_session {
 
         if ($data) {
             my $session = JSON::from_json($data);
-
-            warn "Old session detected - user field not present. You may need to create a new login session using 'login' to use some API calls."
-                unless exists $self->{user};
-
-            $self->{user}    = $session->{user};
             $self->{modhash} = $session->{modhash};
             $self->{cookie}  = $session->{cookie};
 
@@ -320,6 +340,10 @@ sub load_session {
 # User and account management
 #===============================================================================
 
+sub authenticate {
+	my ($self, $client_id, $client_secret) = @_;
+}
+
 sub login {
     my ($self, $usr, $pwd) = @_;
     !$usr && croak 'Username expected';
@@ -335,7 +359,6 @@ sub login {
 
     $self->{modhash} = $result->{data}{modhash};
     $self->{cookie}  = $result->{data}{cookie};
-    $self->{user}    = $usr;
 
     return 1;
 }
@@ -343,9 +366,10 @@ sub login {
 sub me {
     my $self = shift;
     DEBUG('Request user account info');
-    $self->require_login;
+    #$self->require_login;
     my $result = $self->api_json_request(api => API_ME);
-    return Reddit::Client::Account->new($self, $result->{data});
+    #return Reddit::Client::Account->new($self, $result->{data});
+    return Reddit::Client::Account->new($self, $result);
 }
 
 sub list_subreddits {
@@ -428,6 +452,32 @@ sub fetch_links {
         after  => $result->{data}{after},
         items  => [ map {Reddit::Client::Link->new($self, $_->{data})} @{$result->{data}{children}} ],
     };
+}
+
+sub get_subreddit_comments {
+	my ($self, %param) = @_;
+	my $subreddit 	= $param{subreddit} 	|| 'all';
+	my $view 	= $param{view} 		|| VIEW_DEFAULT;
+	#my $limit	= $param{limit} 	|| DEFAULT_LIMIT;
+
+	my $query = {};
+	$query->{limit}	= $param{limit} if $param{limit};
+	# Reddit's new API defaults to 25 with max 100
+
+	$subreddit = subreddit($subreddit); # remove slashes and leading r/
+    	my $args = [$view];
+    	unshift @$args, $subreddit if $subreddit;
+    	my $result = $self->api_json_request(
+        	api      => API_COMMENTS,
+        	args     => $args,
+        	data     => $query,
+    	);
+	#return $result->{data};
+    	return {
+        	before => $result->{data}{before},
+        	after  => $result->{data}{after},
+        	items  => [ map {Reddit::Client::Comment->new($self, $_->{data})} @{$result->{data}{children}} ],
+    	};
 }
 
 #===============================================================================
@@ -521,6 +571,31 @@ sub submit_comment {
     });
 
     return $result->{data}{things}[0]{data}{id};
+}
+
+#===============================================================================
+# Private messages
+#===============================================================================
+
+sub send_message {
+    	my ($self, %param) = @_;
+	my $to		= $param{to}	 	|| croak 'Expected "to"';
+	my $subject	= $param{subject}	|| croak 'Expected "subject"';
+	my $text	= $param{text}		|| croak 'Expected "text"';
+
+	croak '"subject" cannot be longer than 100 characters' if length $subject > 100;
+    	
+	$self->require_login;
+    	DEBUG('Submit message to %s: %s', $to, $subject);
+
+    	my $result = $self->api_json_request(api => API_MESSAGE, data => {
+       	 to    		=> $to,
+       	 subject  	=> $subject,
+       	 text		=> $text,
+       	 kind   	=> SUBMIT_MESSAGE,
+    	});
+
+	return $result;
 }
 
 #===============================================================================
@@ -619,8 +694,6 @@ Reddit's external API.
 For more information about the Reddit API, see L<https://github.com/reddit/reddit/wiki/API>.
 
 =head1 CONSTANTS
-
-Note that none of these constants are exported by C<Reddit::Client>.
 
     VIEW_HOT            "Hot" links feed
     VIEW_NEW            "New" links feed
@@ -873,10 +946,6 @@ Jeff Ober L<mailto:jeffober@gmail.com>
 
 =head1 LICENSE
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
+BSD license
 
 =cut

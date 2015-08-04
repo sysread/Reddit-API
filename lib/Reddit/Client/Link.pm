@@ -48,10 +48,6 @@ Jeff Ober L<mailto:jeffober@gmail.com>
 
 =head1 LICENSE
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
+BSD license
 
 =cut

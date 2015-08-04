@@ -21,10 +21,19 @@ $reddit->get_token($client_id, $secret, $username, $password);
 
 ##############################################
 # Send private message
+##############################################
 my $result = $reddit->send_message(
 	to      => 'earth-tone',
 	subject => 'test',
 	text    => 'i can haz PMs?'
+);
+
+##############################################
+# Get all comments from a subreddit or multi
+##############################################
+my $cmts = $reddit->get_subreddit_comments(
+	subreddit => 'girlsnanimals',
+	limit => 25,
 );
 
 ##############################################

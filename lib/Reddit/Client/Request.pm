@@ -18,6 +18,8 @@ use fields (
     'post_data',
     'cookie',
     'modhash',
+	'token',
+	'tokentype'
 );
 
 sub new {
@@ -29,6 +31,8 @@ sub new {
     $self->{post_data}  = $param{post_data};
     $self->{cookie}     = $param{cookie};
     $self->{modhash}    = $param{modhash};
+    $self->{token}	= $param{token};
+    $self->{tokentype}	= $param{tokentype};
 
     if (defined $self->{query}) {
         ref $self->{query} eq 'HASH' || croak 'Expected HASH ref for "query"';
@@ -56,8 +60,9 @@ sub build_request {
     my $request = HTTP::Request->new();
 
     $request->uri($self->{url});
-    $request->header('Cookie', sprintf('reddit_session=%s', $self->{cookie}))
-        if $self->{cookie};
+    #$request->header('Cookie', sprintf('reddit_session=%s', $self->{cookie}))
+    #    if $self->{cookie};
+    $request->header("Authorization"=> "$self->{tokentype} $self->{token}");
 
     if ($self->{method} eq 'POST') {
         my $post_data = $self->{post_data} || {};
@@ -81,6 +86,7 @@ sub send {
     Reddit::Client::DEBUG('%4s request to %s', $self->{method}, $self->{url});
 
     my $ua  = LWP::UserAgent->new(agent => $self->{user_agent}, env_proxy => 1);
+    #print $request->as_string."\n";
     my $res = $ua->request($request);
 
     if ($res->is_success) {
@@ -88,6 +94,27 @@ sub send {
     } else {
         croak sprintf('Request error: HTTP %s', $res->status_line);
     }
+}
+
+sub token_request {
+	my ($self, $client_id, $secret, $username, $password, $useragent) = @_;
+
+	my $url = "https://$client_id:$secret\@www.reddit.com/api/v1/access_token";
+
+    	my $ua = LWP::UserAgent->new(user_agent => $useragent);
+	my $req = HTTP::Request->new(POST => $url);
+	$req->header('content-type' => 'application/x-www-form-urlencoded');
+
+	my $postdata = "grant_type=password&username=$username&password=$password";
+	$req->content($postdata);
+
+    	my $res = $ua->request($req);
+
+    	if ($res->is_success) {
+        	return $res->decoded_content;
+    	} else {
+        	croak sprintf('Request error: HTTP %s', $res->status_line);
+    	}
 }
 
 1;
@@ -146,10 +173,6 @@ Jeff Ober L<mailto:jeffober@gmail.com>
 
 =head1 LICENSE
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
+BSD license
 
 =cut
