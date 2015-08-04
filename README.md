@@ -50,7 +50,7 @@ The authorization token lasts for 1 hour. If your script runs continuously for m
 While it is possible to get "permanent" tokens, that term is misleading because you still need to get a temporary token every time the script runs, which will also expire after an hour. They are intended for applications that are doing things on a user's behalf ("web" and "installed" app types). There is no benefit to supporting this for a "script" type app, and Reddit::Client didn't, so this doesn't, although I may add support if there is demand.
 
 # Installation
-It can be run locally of course, or if you want to install it, you can just drop it into Perl's library directory, which is probably something like /usr/local/share/perl/5.14.2/Reddit. It can be dropped in on top of an existing Reddit::Client installation. To do that, you would only copy the lib/Reddit directory (not the top level directory with the Makefile, etc).
+The Reddit directory can be dropped right onto the Reddit directory in your existing Reddit::Client installation, which is probably somewhere like /usr/local/share/perl/5.14.2/Reddit. The installer resumably works but is untested.
 
 ---
 
