@@ -56,7 +56,8 @@ use constant API_LINKS_FRONT    => 12;
 use constant API_LINKS_OTHER    => 13;
 use constant API_DEL            => 14;
 use constant API_MESSAGE        => 15;
-use constant API_COMMENTS	=> 16;
+use constant API_COMMENTS_FRONT	=> 16;
+use constant API_COMMENTS	=> 17;
 
 use constant SUBREDDITS_HOME    => '';
 use constant SUBREDDITS_MINE    => 'mine';
@@ -74,23 +75,24 @@ our $BASE_URL        = 'https://oauth.reddit.com';
 our $UA              = sprintf 'Reddit::Client/%f', $VERSION;
 
 our @API;
-$API[API_ME         ] = ['GET',  '/api/v1/me'     ];
-$API[API_INFO       ] = ['GET',  '/by_id/%s'      ];
-$API[API_SEARCH     ] = ['GET',  '/reddits/search'];
-$API[API_LOGIN      ] = ['POST', '/api/login/%s'  ];
-$API[API_SUBMIT     ] = ['POST', '/api/submit'    ];
-$API[API_COMMENT    ] = ['POST', '/api/comment'   ];
-$API[API_VOTE       ] = ['POST', '/api/vote'      ];
-$API[API_SAVE       ] = ['POST', '/api/save'      ];
-$API[API_UNSAVE     ] = ['POST', '/api/unsave'    ];
-$API[API_HIDE       ] = ['POST', '/api/hide'      ];
-$API[API_UNHIDE     ] = ['POST', '/api/unhide'    ];
-$API[API_SUBREDDITS ] = ['GET',  '/reddits/%s'    ];
-$API[API_LINKS_OTHER] = ['GET',  '/%s'            ];
-$API[API_LINKS_FRONT] = ['GET',  '/r/%s/%s'       ];
-$API[API_DEL        ] = ['POST', '/api/del'       ];
-$API[API_MESSAGE    ] = ['POST', '/api/compose'   ];
-$API[API_COMMENTS   ] = ['GET',  '/r/%s/comments' ];
+$API[API_ME            ] = ['GET',  '/api/v1/me'     ];
+$API[API_INFO          ] = ['GET',  '/by_id/%s'      ];
+$API[API_SEARCH        ] = ['GET',  '/reddits/search'];
+$API[API_LOGIN         ] = ['POST', '/api/login/%s'  ];
+$API[API_SUBMIT        ] = ['POST', '/api/submit'    ];
+$API[API_COMMENT       ] = ['POST', '/api/comment'   ];
+$API[API_VOTE          ] = ['POST', '/api/vote'      ];
+$API[API_SAVE          ] = ['POST', '/api/save'      ];
+$API[API_UNSAVE        ] = ['POST', '/api/unsave'    ];
+$API[API_HIDE          ] = ['POST', '/api/hide'      ];
+$API[API_UNHIDE        ] = ['POST', '/api/unhide'    ];
+$API[API_SUBREDDITS    ] = ['GET',  '/reddits/%s'    ];
+$API[API_LINKS_OTHER   ] = ['GET',  '/%s'            ];
+$API[API_LINKS_FRONT   ] = ['GET',  '/r/%s/%s'       ];
+$API[API_DEL           ] = ['POST', '/api/del'       ];
+$API[API_MESSAGE       ] = ['POST', '/api/compose'   ];
+$API[API_COMMENTS      ] = ['GET',  '/r/%s/comments' ];
+$API[API_COMMENTS_FRONT] = ['GET',  '/comments'      ];
 #===============================================================================
 # Package routines
 #===============================================================================
@@ -456,7 +458,7 @@ sub fetch_links {
 
 sub get_subreddit_comments {
 	my ($self, %param) = @_;
-	my $subreddit 	= $param{subreddit} 	|| 'all';
+	my $subreddit 	= $param{subreddit} 	|| '';
 	my $view 	= $param{view} 		|| VIEW_DEFAULT;
 	#my $limit	= $param{limit} 	|| DEFAULT_LIMIT;
 
@@ -468,7 +470,7 @@ sub get_subreddit_comments {
     	my $args = [$view];
     	unshift @$args, $subreddit if $subreddit;
     	my $result = $self->api_json_request(
-        	api      => API_COMMENTS,
+        	api      => ($subreddit ? API_COMMENTS : API_COMMENTS_FRONT),
         	args     => $args,
         	data     => $query,
     	);
