@@ -1,0 +1,74 @@
+#!/usr/bin/perl
+
+use warnings; use strict; use v5.14; use lib '/home/bubs/perl/lib'; 
+use Reddit::Client;
+use Test::Simple tests => 7;
+use Data::Dumper;
+
+
+# Account and oauth details ############################3
+my $client_id 	= '2ySDQtixv44PiQ';
+my $secret	= 'oMRYIMl9qL-QIgrzLrvDjwjkAvc';
+my $user	= 'earth-tone';
+my $pass	= 'batmanlives';
+########################################################3
+
+#
+#	Reddit::Client Object
+#
+my $reddit = new Reddit::Client(
+        session_file => '/home/bubs/perl/reddit/session_data.json',
+        user_agent   => 'inboxcheck',
+);  
+
+$reddit->get_token($client_id, $secret, $user, $pass);
+
+
+print "Create Reddit::Client object:   ";
+ok(ref $reddit eq 'Reddit::Client');
+
+print "Token exists:                   ";
+ok($reddit->{token});
+
+#
+# 	me()
+#
+my $me = $reddit->me();
+print "me():                           ";
+ok(ref $me eq 'Reddit::Client::Account');
+
+#
+#	send_message()
+#
+my $result = $reddit->send_message(	
+			to=>'lecherous_hump',
+			subject=>'test msg'.time,
+			text=>'test'.time);
+
+print "send_message():                 ";
+ok(!scalar @{$result->{errors}});
+
+#
+#	get_subreddit_comments()
+#
+my $sub = "test+all";
+my $limit = 5;
+
+my $cmts = $reddit->get_subreddit_comments(
+	subreddit=>$sub,
+	limit=>$limit);
+
+print "get_subreddit_comments():\n";
+print "  provided subreddit and limit: ";
+ok($cmts);
+
+$cmts = $reddit->get_subreddit_comments(
+	limit=>$limit);
+print "  no sub provided:              ";
+ok($cmts);
+
+
+$cmts = $reddit->get_subreddit_comments();
+
+print "  no limit or sub provided:     ";
+ok($cmts);

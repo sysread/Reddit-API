@@ -190,16 +190,18 @@ sub request {
 
 sub get_token {
 	my ($self, $client_id, $secret, $username, $password) = @_;
-	$self->{client_id} 	= $client_id; # store for automatic refreshing
-	$self->{secret} 	= $secret;
-	$self->{username}	= $username;
-	$self->{password}	= $password;
+	$self->{client_id} 	= $client_id 	|| croak "need client_id"; 
+	$self->{secret} 	= $secret	|| croak "need secret";
+	$self->{username}	= $username	|| croak "need username";
+	$self->{password}	= $password	|| croak "need password";
 	$self->{last_token} 	= time;
 
 	my $message = Reddit::Client::Request->token_request($client_id, $secret, $username, $password, $self->{user_agent});
 	my $j = JSON::decode_json($message);
 	$self->{token} 		= $j->{access_token};
 	$self->{tokentype} 	= $j->{token_type};
+
+	if (!$self->{token}) { croak "Unable to get or parse token."; }
 }
 
 sub json_request {
@@ -463,8 +465,13 @@ sub get_subreddit_comments {
 	#my $limit	= $param{limit} 	|| DEFAULT_LIMIT;
 
 	my $query = {};
-	$query->{limit}	= $param{limit} if $param{limit};
-	# Reddit's new API defaults to 25 with max 100
+	# if limit exists but is false (for "no limit"), get as many as possible
+	# this will probably be 100 but ask for a ridiculous amount anyway
+	if (exists $param{limit}) {
+		$query->{limit} = $param{limit} || 500;
+	} else {
+		$query->{limit} = 25;
+	}
 
 	$subreddit = subreddit($subreddit); # remove slashes and leading r/
     	my $args = [$view];
@@ -587,7 +594,7 @@ sub send_message {
 
 	croak '"subject" cannot be longer than 100 characters' if length $subject > 100;
     	
-	$self->require_login;
+	#$self->require_login;
     	DEBUG('Submit message to %s: %s', $to, $subject);
 
     	my $result = $self->api_json_request(api => API_MESSAGE, data => {
