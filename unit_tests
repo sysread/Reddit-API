@@ -7,10 +7,10 @@ use Data::Dumper;
 
 
 # Account and oauth details ############################3
-my $client_id 	= '2ySDQtixv44PiQ';
-my $secret	= 'oMRYIMl9qL-QIgrzLrvDjwjkAvc';
-my $user	= 'earth-tone';
-my $pass	= 'batmanlives';
+my $client_id 	= '';
+my $secret	= '';
+my $user	= '';
+my $pass	= '';
 ########################################################3
 
 #
@@ -41,7 +41,7 @@ ok(ref $me eq 'Reddit::Client::Account');
 #	send_message()
 #
 my $result = $reddit->send_message(	
-			to=>'lecherous_hump',
+			to=>'earth-tone',
 			subject=>'test msg'.time,
 			text=>'test'.time);
 
