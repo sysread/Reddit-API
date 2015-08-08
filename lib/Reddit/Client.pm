@@ -167,7 +167,7 @@ sub new {
 sub request {
     my ($self, $method, $path, $query, $post_data) = @_;
 
-	if ($self->{last_token} <= time - 3600) {
+	if (!$self->{last_token} || $self->{last_token} <= time - 3600) {
 		$self->get_token($self->{client_id}, $self->{secret}, $self->{username}, $self->{password});
 	}
 

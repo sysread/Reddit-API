@@ -3,7 +3,7 @@ use warnings;
 use Carp;
 use HTTP::Response;
 use Test::MockModule;
-use Test::More tests => 16;
+use Test::More tests => 15;
 
 use Reddit::Client::Request;
 
@@ -43,7 +43,7 @@ my $rq = Reddit::Client::Request->new(
     ok($request->method eq 'POST', 'build_request');
     ok($request->uri eq 'http://www.example.com?foo=bar', 'build_request');
     ok($request->content eq 'baz=bat&modhash=test&uh=test', 'build_request');
-    ok($request->header('Cookie') eq 'reddit_session=test', 'build_request');
+    #ok($request->header('Cookie') eq 'reddit_session=test', 'build_request');
     ok($request->content_type eq 'application/x-www-form-urlencoded', 'build_request');
 }
 

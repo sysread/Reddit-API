@@ -18,8 +18,8 @@ use fields (
     'post_data',
     'cookie',
     'modhash',
-	'token',
-	'tokentype'
+    'token',
+    'tokentype'
 );
 
 sub new {
@@ -62,7 +62,7 @@ sub build_request {
     $request->uri($self->{url});
     #$request->header('Cookie', sprintf('reddit_session=%s', $self->{cookie}))
     #    if $self->{cookie};
-    $request->header("Authorization"=> "$self->{tokentype} $self->{token}");
+    $request->header("Authorization"=> "$self->{tokentype} $self->{token}") if $self->{tokentype} && $self->{token};
 
     if ($self->{method} eq 'POST') {
         my $post_data = $self->{post_data} || {};
@@ -82,11 +82,12 @@ sub build_request {
 sub send {
     my $self    = shift;
     my $request = $self->build_request;
+	#use Data::Dumper;
+	#print Dumper($request)."\n";
 
     Reddit::Client::DEBUG('%4s request to %s', $self->{method}, $self->{url});
 
     my $ua  = LWP::UserAgent->new(agent => $self->{user_agent}, env_proxy => 1);
-    #print $request->as_string."\n";
     my $res = $ua->request($request);
 
     if ($res->is_success) {
