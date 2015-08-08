@@ -1,6 +1,6 @@
 package Reddit::Client;
 
-our $VERSION = '0.92';
+our $VERSION = '0.93';
 $VERSION = eval $VERSION;
 
 use strict;
@@ -211,7 +211,7 @@ sub json_request {
     if ($method eq 'POST') {
         $post_data ||= {};
         $post_data->{api_type} = 'json';
-    } else {
+    } else { 
         #$path .= '.json'; # the oauth api returns json by default
     }
 
@@ -434,7 +434,7 @@ sub fetch_links {
     DEBUG('Fetch %d link(s): %s/%s?before=%s&after=%s', $limit, $subreddit, $view, ($before || '-'), ($after || '-'));
 
     my $query  = {};
-    if ($before || $after || $limit) {
+    if ($before || $after || $limit) { # limit is always defined
         $query->{limit}  = $limit  if defined $limit;
         $query->{before} = $before if defined $before;
         $query->{after}  = $after  if defined $after;
@@ -462,11 +462,15 @@ sub get_subreddit_comments {
 	my ($self, %param) = @_;
 	my $subreddit 	= $param{subreddit} 	|| '';
 	my $view 	= $param{view} 		|| VIEW_DEFAULT;
-	#my $limit	= $param{limit} 	|| DEFAULT_LIMIT;
+        my $before    	= $param{before};
+    	my $after     	= $param{after};
 
 	my $query = {};
+        $query->{before} = $before if defined $before;
+        $query->{after}  = $after  if defined $after;
 	# if limit exists but is false (for "no limit"), get as many as possible
 	# this will probably be 100 but ask for a ridiculous amount anyway
+	# if we don't provide a limit, Reddit will give us 25
 	if (exists $param{limit}) {
 		$query->{limit} = $param{limit} || 500;
 	} else {
@@ -476,12 +480,13 @@ sub get_subreddit_comments {
 	$subreddit = subreddit($subreddit); # remove slashes and leading r/
     	my $args = [$view];
     	unshift @$args, $subreddit if $subreddit;
+
     	my $result = $self->api_json_request(
         	api      => ($subreddit ? API_COMMENTS : API_COMMENTS_FRONT),
         	args     => $args,
         	data     => $query,
     	);
-	#return $result->{data};
+
     	return {
         	before => $result->{data}{before},
         	after  => $result->{data}{after},
@@ -555,7 +560,7 @@ sub submit_text {
 # Comments
 #===============================================================================
 
-sub get_comments {
+sub get_comments { # currently broken
     my ($self, %param) = @_;
     my $permalink = $param{permalink} || croak 'Expected "permalink"';
 
