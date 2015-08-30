@@ -184,7 +184,11 @@ sub request {
     my ($self, $method, $path, $query, $post_data) = @_;
 
 	if (!$self->{last_token} || $self->{last_token} <= time - 3600) {
+<<<<<<< HEAD
 		$self->get_token(client_id=>$self->{client_id}, secret=>$self->{secret}, username=>$self->{username}, password=>$self->{password});
+=======
+		$self->get_token($self->{client_id}, $self->{secret}, $self->{username}, $self->{password});
+>>>>>>> origin
 	}
 
     # Trim leading slashes off of the path
