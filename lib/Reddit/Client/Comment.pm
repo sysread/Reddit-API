@@ -7,16 +7,16 @@ use Carp;
 require Reddit::Client::VotableThing;
 
 use base   qw/Reddit::Client::VotableThing/;
-use fields qw/link_flair_text media url link_flair_css_class num_reports created_utc
-              banned_by subreddit title author_flair_text is_self author media_embed
-              permalink author_flair_css_class selftext domain num_comments clicked
-              saved thumbnail subreddit_id approved_by selftext_html created hidden
-              over_18 parent_id replies link_id body body_html/;
+use fields qw/link_flair_text media url link_url link_flair_css_class num_reports created_utc
+			  banned_by subreddit title author_flair_text is_self author media_embed
+			  permalink author_flair_css_class selftext domain num_comments clicked
+			  saved thumbnail subreddit_id approved_by selftext_html created hidden
+			  over_18 parent_id replies link_id body body_html/;
 
 sub set_replies {
     my ($self, $value) = @_;
     if (ref $value && exists $value->{data}{children}) {
-        $self->{replies} = [ map { Reddit::Client::Comment->new($self->{session}, $_->{data}) } @{$value->{data}{children}} ];
+	    $self->{replies} = [ map { Reddit::Client::Comment->new($self->{session}, $_->{data}) } @{$value->{data}{children}} ];
     } else {
         $self->{replies} = [];
     }
@@ -72,14 +72,12 @@ with no replies return an empty array for C<replies>.
 
 =head1 AUTHOR
 
+<mailto:earth-tone@ubwg.net>
+
 Jeff Ober L<mailto:jeffober@gmail.com>
 
 =head1 LICENSE
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
+BSD license
 
 =cut

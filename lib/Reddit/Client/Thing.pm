@@ -7,7 +7,6 @@ use Carp;
 use List::Util qw/first/;
 
 our @BOOL_FIELDS = qw/is_self likes clicked saved hidden over_18 over18
-                      has_verified_email hide_from_robots is_friend
                       has_mail has_mod_mail is_mod is_gold/;
 
 
@@ -23,7 +22,7 @@ sub new {
 
 sub load_from_source_data {
     require Reddit::Client;
-
+ 
     my ($self, $source_data) = @_;
     if ($source_data) {
         foreach my $field (keys %$source_data) {
@@ -34,9 +33,9 @@ sub load_from_source_data {
             } elsif (first {$_ eq $field} @BOOL_FIELDS) {
                 $self->set_bool($field, $source_data->{$field});
             } else {
-                eval { $self->{$field} = $source_data->{$field} };
-                Reddit::Client::DEBUG("Field %s is missing from package %s\n", $field, ref $self)
-                    if $@;
+	            eval { $self->{$field} = $source_data->{$field} };
+	            Reddit::Client::DEBUG("Field %s is missing from package %s\n", $field, ref $self)
+	                if $@;
             }
 
             # Add getter for field
@@ -107,14 +106,12 @@ by reddit's servers.
 
 =head1 AUTHOR
 
+<mailto:earth-tone@ubwg.net>
+
 Jeff Ober L<mailto:jeffober@gmail.com>
 
 =head1 LICENSE
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
+BSD license
 
 =cut
